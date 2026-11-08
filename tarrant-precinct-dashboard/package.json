@@ -1,1 +1,0 @@
-{"name":"tarrant-precinct-dashboard","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1","build":"vite build","preview":"vite preview --host 127.0.0.1","test":"node --test","validate":"node scripts/validate.mjs"},"dependencies":{"maplibre-gl":"5.6.1"},"devDependencies":{"vite":"6.3.5"},"engines":{"node":">=22"}}
