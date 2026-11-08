@@ -1,55 +1,55 @@
 # Tarrant precinct dashboard
 
-Private-project starter for exploring Tarrant County elections with OpenFreeMap and MapLibre. **This repository contains synthetic demonstration data, not official precinct boundaries or election results.** No hosted site or authentication system is provisioned.
+Personal research project for exploring Tarrant County elections with OpenFreeMap and MapLibre. The repository is public; the project is not being promoted as a public service.
+
+**The starter currently uses synthetic demonstration precincts and votes, not official election data.**
 
 ## Run locally
 
 Requires Node.js 22 or newer.
 
 ```sh
+git clone https://github.com/Bryvado/tarrant-dash.git
+cd tarrant-dash
 npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. For checks and a production build:
+Open the local URL printed by Vite.
+
+## Import into a hosting service
+
+- Repository: `https://github.com/Bryvado/tarrant-dash`
+- Branch: `main`
+- Framework: Vite
+- Install command: `npm ci`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Node.js: 22 or newer
+
+No hosting service or deployment has been configured by this setup.
+
+## Included
+
+- OpenFreeMap Positron basemap.
+- Linked map and keyboard-accessible precinct scatterplot.
+- Two-party margin, county-relative lean, turnout, opacity and label controls.
+- Precinct profiles and GeoJSON export.
+- Election manifest and reserved Democratic/Republican precinct chair data structure.
+- Tests, data validation and GitHub Actions build checks.
+
+## Checks
 
 ```sh
 npm test
 npm run validate
 npm run build
-npm run preview
 ```
 
-## Import into a private GitHub repository
-
-Extract the ZIP, then open a terminal in the extracted folder. Create an **empty private repository** in GitHub, without an initial README or license. Run:
-
-```sh
-git init -b main
-git add .
-git commit -m "Initialize Tarrant precinct dashboard"
-git remote add origin https://github.com/YOUR_USERNAME/tarrant-precinct-dashboard.git
-git push -u origin main
-```
-
-Replace YOUR_USERNAME and the repository name as needed. This ZIP is a source folder, not a GitHub Importer URL. A hosting service that imports GitHub projects can use `npm run build` with output directory `dist`.
-
-## Included
-
-- OpenFreeMap Positron basemap with attribution supplied by MapLibre.
-- Bidirectional selection between map and keyboard-accessible scatterplot.
-- Two-party margin, county-relative lean, turnout, opacity, and label controls.
-- Precinct profiles and GeoJSON export.
-- Election manifest and empty Democratic/Republican precinct chair collection.
-- Validation, metric tests, CI, pinned dependencies and lockfile.
-- Responsive layout; browser interaction verification remains part of implementation acceptance.
-
-## Privacy
-
-`private: true` prevents accidental npm publication; it does NOT provide website authentication. Use localhost or an authenticated hosting environment. Protect both the app and its data routes. Never rely on an unlisted URL or a private GitHub repository to secure a deployed website. Do not put raw voter rosters, credentials, or sensitive notes in `public/`; all public assets are shipped to browsers. `data/raw/`, `data/private/` and environment files are gitignored. OpenFreeMap requests are external network requests.
+Browser interaction verification on desktop and mobile remains part of production acceptance.
 
 ## Data and next steps
 
-See [data contract](docs/DATA.md), [source inventory](docs/SOURCES.md), and [implementation plan](docs/PLAN.md). Production input must be validated against official totals before replacing the demo. Do not match different election vintages solely by precinct number.
+See [data contract](docs/DATA.md), [source inventory](docs/SOURCES.md), and [implementation plan](docs/PLAN.md). Replace the demonstration only after official results reconcile and historical boundary versions are established. Nonpartisan contest rendering and historical comparisons remain planned work.
 
-No remote repository has been created or modified. No deployment workflow is included. No open-source license is granted by this starter.
+Keep credentials and raw voter rosters outside the repository and `public/`. Files in `public/` are delivered to browsers. The package's `private: true` prevents npm publication; it does not control GitHub visibility. Authentication is optional for this personal project, rather than a requirement for setup.
