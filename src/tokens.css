@@ -1,0 +1,9 @@
+:root{
+  --chrome:#f7f6f2; --surface:#fff; --void:#e4e3de;
+  --ink:#21342c; --muted:#506057; --line:#d3d9d1;
+  --accent:#27563f; --accent-soft:#e8efe8; --focus:#835613;
+  --amber:#f4e5bb; --amber-ink:#674607;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px;
+  --radius:8px; --radius-small:4px;
+  --small:12px; --body:14px; --title:20px;
+}
