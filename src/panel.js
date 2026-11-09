@@ -119,15 +119,16 @@ export function renderComparisonTooltip(host, comparison, id) {
   const magnitude=Math.abs(difference)*100;
   const gap=side ? `${side.toUpperCase()} +${magnitude < .05 ? '<0.1' : magnitude.toFixed(1)} pp` : 'Equal shares';
   header.append(el('span',gap,'comparison-tip-gap '+side));
-  for (const [side,name,contest,share] of [
-    ['A',comparison.candidateA,comparison.contestA,shareA],
-    ['B',comparison.candidateB,comparison.contestB,shareB],
+  for (const [side,name,contest,share,votes,totalVotes] of [
+    ['A',comparison.candidateA,comparison.contestA,shareA,point.countA,point.total],
+    ['B',comparison.candidateB,comparison.contestB,shareB,point.countB,point.totalB],
   ]) {
     const row=el('div','','comparison-tip-row');
     const label=el('div','','comparison-tip-name');
     label.append(el('strong',name),el('span',contest,'muted'));
     row.append(el('span',side,'comparison-tip-tag '+side.toLowerCase()),
       label,el('strong',`${(share*100).toFixed(1)}%`,'comparison-tip-share'));
+    if (Number.isFinite(votes)) row.append(el('span',`${number(votes)} votes of ${number(totalVotes)}`,'muted'));
     host.append(row);
   }
 }
@@ -179,9 +180,8 @@ export function renderTooltip(host, view, row) {
     host.append(el('p',metric.context,'precinct-tip-context'));
     if (metric.detail) host.append(el('p',metric.detail,'muted'));
   }
-  const candidates=scope==='candidate'
-    ? [row.ranked.find(entry=>entry.index===choice),row.ranked.find(entry=>entry.index!==choice)].filter(Boolean)
-    : row.ranked.slice(0,2);
+  // Show every choice, including write-ins and zero-vote candidates.
+  const candidates=row.ranked;
   const results=el('div','','precinct-tip-results');
   for (const {count,index} of candidates) {
     const line=el('div','','precinct-tip-result');
