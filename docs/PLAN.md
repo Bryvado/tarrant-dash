@@ -10,3 +10,5 @@
 8. Add both parties' precinct chairs with source verification, vacancy states, term dates, history, and boundary-aware joins. Later add aggregate participation and census context.
 
 Current scope is a repository starter. Official ingestion, historical crosswalks, nonpartisan rendering, additional overlays, authentication, and production browser acceptance are not complete.
+
+The next loading performance step is splitting the election results into per-contest files. The current dashboard parses about 9.6 MB of precinct geometry and results on startup.
