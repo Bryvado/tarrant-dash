@@ -53,6 +53,7 @@ export function createChart(svg, excluded, events) {
     if (point) {
       target.setAttribute('cx',point.x);
       target.setAttribute('cy',point.y);
+      target.setAttribute('r',point.radius+(target===pinRing?3:2));
     }
   }
   function draw() {
@@ -105,10 +106,14 @@ export function createChart(svg, excluded, events) {
     }
     append('text',{x:(left+right)/2,y:height-7,'text-anchor':'middle'},scatter?.xLabel ?? (density?'Votes/mi² · log scale':query.measure==='share'?'Share (%)':'Margin (pp)'));
     append('text',{x:10,y:(top+bottom)/2,'text-anchor':'middle',transform:`rotate(-90 10 ${(top+bottom)/2})`},scatter ? 'Candidate A share (%)' : 'Valid votes');
+    // Logarithmic vote sizing preserves variation without letting high-turnout precincts dominate.
+    const voteLogs=dots.map(row=>Math.log1p(row.total));
+    const minLog=Math.min(...voteLogs), maxLog=Math.max(...voteLogs);
+    const dotRadius=total=>2.5+(maxLog>minLog ? (Math.log1p(total)-minLog)/(maxLog-minLog) : .5)*4;
     for (const [index,row] of dots.entries()) {
-      const point={x:x(row.metric.value),y:y(yValue(row))};
+      const point={x:x(row.metric.value),y:y(yValue(row)),radius:dotRadius(row.total)};
       positions.set(row.precinct,point);
-      const dot=append('circle',{cx:point.x,cy:point.y,r:row.precinct===hovered?5:2.5,fill:mapRows?.get(row.precinct)?.color ?? row.color,'fill-opacity':.55,
+      const dot=append('circle',{cx:point.x,cy:point.y,r:point.radius+(row.precinct===hovered?1.5:0),fill:mapRows?.get(row.precinct)?.color ?? row.color,'fill-opacity':.55,
         'data-chart-precinct':row.precinct,id:'chart-point-'+row.precinct,role:'option',
         'aria-label':`Precinct ${row.precinct}, ${formatMetric(row.metric.value,query.measure)}, ${scatter ? formatMetric(row.y,'share')+' candidate A share' : number(row.total)+' votes'}`});
       dot.onpointerenter=event=>{active=index;events.hover(row.precinct,event);};
@@ -161,5 +166,5 @@ export function createChart(svg, excluded, events) {
   return {update(next){view=next;active=0;draw();},
     filter(ids,colors){filterIds=ids;mapRows=colors;if(view)draw();},
     log(enabled){logY=enabled;if(view)draw();},
-    hover(id){const old=svg.querySelector('#chart-point-'+hovered);if(old)old.setAttribute('r',2.5);hovered=id;const dot=svg.querySelector('#chart-point-'+id);if(dot)dot.setAttribute('r',5);ring(hoverRing,id);},pin(id){selected=id;ring(pinRing,id);}};
+    hover(id){const old=svg.querySelector('#chart-point-'+hovered);if(old)old.setAttribute('r',positions.get(hovered)?.radius??2.5);hovered=id;const dot=svg.querySelector('#chart-point-'+id);if(dot)dot.setAttribute('r',(positions.get(id)?.radius??2.5)+1.5);ring(hoverRing,id);},pin(id){selected=id;ring(pinRing,id);}};
 }
