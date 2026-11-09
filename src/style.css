@@ -142,3 +142,11 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .comparison-tip-name{flex:1;min-width:0;overflow-wrap:anywhere}
 .comparison-tip-name>span{display:block}
 .comparison-tip-share{font-variant-numeric:tabular-nums;white-space:nowrap}
+.precinct-tip-metric{display:grid;margin-top:7px}
+.precinct-tip-metric strong{font-size:1.25em;font-variant-numeric:tabular-nums}
+.precinct-tip-context{font-weight:600;overflow-wrap:anywhere}
+.precinct-tip-results{margin-top:7px;padding-top:5px;border-top:1px solid var(--line)}
+.precinct-tip-result{display:grid;grid-template-columns:7px minmax(0,1fr) auto auto;gap:6px;align-items:baseline;font-variant-numeric:tabular-nums}
+.precinct-tip-result>span:nth-child(2){overflow-wrap:anywhere}
+.precinct-tip-result>strong{text-align:right;min-width:4ch}
+.precinct-tip-dot{width:7px;height:7px;border-radius:50%}

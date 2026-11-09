@@ -1,4 +1,5 @@
 import { choiceColor } from './color.js';
+import { METHODS } from './controls.js';
 import { rankVotes, isTie, number, formatMetric } from './metrics.js';
 
 const el = (tag,text='',className='') => {
@@ -77,10 +78,10 @@ export function renderPrecinct(host, view, id, chairs, demographics, comparison)
   for (const [label,value] of [
     ['Ballots',number(row.ballots)],['Valid votes',number(row.total)],['Undervotes',number(row.result.under[view.query.method])],
     ['Overvotes',number(row.result.over[view.query.method])],['Area',`${number(row.area,3)} mi²`],
-    ['Map measure',formatMetric(row.metric?.value,view.query.measure)],
+    ...(comparison ? [] : [[precinctMetric(view,row).label,formatMetric(row.metric?.value,view.query.measure)]]),
   ]) grid.append(el('dt',label),el('dd',value));
   host.append(grid);
-  if (row.metric?.value != null && view.countyMetric?.value != null) {
+  if (!comparison && row.metric?.value != null && view.countyMetric?.value != null) {
     const delta=row.metric.value-view.countyMetric.value;
     const difference=view.query.measure==='density' ? formatMetric(delta,'density') : formatMetric(delta,'margin');
     host.append(el('p',`${delta>=0?'+':''}${difference} vs. contest-wide measure`,'muted'));
@@ -123,13 +124,64 @@ export function renderComparisonTooltip(host, comparison, id) {
   }
 }
 
-export function renderTooltip(host, view, row) {
-  host.replaceChildren(el('strong',`Precinct ${row.precinct}`));
-  for (const entry of row.ranked.slice(0,2)) {
-    if (row.total) host.append(el('p',`${view.contest.choices[entry.index].name} · ${number(entry.count)} · ${percent(entry.count,row.total)}`));
+function precinctMetric(view, row) {
+  const {measure,scope,choice}=view.query;
+  const leader=scope==='winner';
+  const subject=leader ? row.ranked[0] : row.ranked.find(entry=>entry.index===choice);
+  const rival=row.ranked.find(entry=>entry.index!==subject?.index);
+  const name=entry=>view.contest.choices[entry.index].name;
+  if (measure==='share') {
+    return {label:leader?'Leading vote share':'Selected candidate’s vote share',
+      context:subject ? name(subject)+(leader && isTie(row.ranked) ? ' · tied for first' : '') : ''};
   }
-  const [leader,runner]=row.ranked;
-  if (row.total && runner) host.append(el('p',`Leader margin ${formatMetric((leader.count-runner.count)/row.total,'margin')}`));
-  host.append(el('p',`${number(row.total)} valid votes · ${number(row.ballots)} ballots`));
-  if (row.metric) host.append(el('p',`Map measure ${formatMetric(row.metric.value,view.query.measure)}`));
+  if (measure==='margin') {
+    return {label:leader?'Winning margin':'Selected candidate’s margin',
+      context:subject && rival ? `${name(subject)} vs. ${name(rival)}` : '',
+      empty:'Margin needs at least two choices.'};
+  }
+  const area=`${number(row.area,3)} mi²`;
+  if (scope==='total') return {label:'Total vote density',context:`${number(row.total)} valid votes across ${area}`};
+  const votes=subject?.count ?? 0;
+  if (!leader) return {label:'Candidate vote density',context:`${subject ? name(subject)+' · ' : ''}${number(votes)} votes across ${area}`};
+  const net=votes-(rival?.count ?? 0);
+  return {label:'Net vote density',
+    context:subject ? `${name(subject)} · ${number(net)} net votes across ${area}` : '',
+    detail:rival ? `Net votes above ${name(rival)}` : ''};
+}
+
+export function renderTooltip(host, view, row) {
+  const {method,measure,scope,choice}=view.query;
+  const header=el('div','','comparison-tip-header');
+  header.append(el('strong',`Precinct ${row.precinct}`),el('span',METHODS[method],'muted'));
+  host.replaceChildren(header);
+  if (!row.total) {
+    host.append(el('p','No valid votes for this contest and voting method.','muted'));
+    return;
+  }
+  const metric=precinctMetric(view,row);
+  const headline=el('div','','precinct-tip-metric');
+  const value=row.metric?.value;
+  const signed=measure==='margin' && scope==='candidate' && value>0 ? '+' : '';
+  headline.append(el('span',metric.label,'muted'),
+    el('strong',value==null ? 'Unavailable' : signed+formatMetric(value,measure)));
+  host.append(headline);
+  if (value==null) {
+    host.append(el('p',metric.empty ?? 'Precinct area is unavailable.','muted'));
+  } else {
+    host.append(el('p',metric.context,'precinct-tip-context'));
+    if (metric.detail) host.append(el('p',metric.detail,'muted'));
+  }
+  const candidates=scope==='candidate'
+    ? [row.ranked.find(entry=>entry.index===choice),row.ranked.find(entry=>entry.index!==choice)].filter(Boolean)
+    : row.ranked.slice(0,2);
+  const results=el('div','','precinct-tip-results');
+  for (const {count,index} of candidates) {
+    const line=el('div','','precinct-tip-result');
+    const dot=el('span','','precinct-tip-dot');
+    dot.style.backgroundColor=choiceColor(view.contest,index);
+    line.append(dot,el('span',view.contest.choices[index].name),
+      el('span',number(count),'muted'),el('strong',percent(count,row.total)));
+    results.append(line);
+  }
+  host.append(results,el('p',`${number(row.total)} valid votes`,'muted'));
 }
