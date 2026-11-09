@@ -100,6 +100,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
       const numerator = compare ? second.votes[other][method] : profile[group.value];
       const first = row.result.votes[candidate][method];
       const point = { ...row, y:first/row.total, metric:{value:numerator/denominator},
+        countA:first, countB:compare ? numerator : null, totalB:denominator,
         color:choiceColor(view.contest,candidate) };
       rows.push(point);
       plotted.set(row.precinct,point);
