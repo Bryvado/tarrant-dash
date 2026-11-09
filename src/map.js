@@ -48,7 +48,7 @@ const countyEdge = {
   type:'Feature', properties:{},
   geometry:{type:'MultiLineString',coordinates:edges},
 };
-const zoomLine = ['interpolate',['linear'],['zoom'],9,.25,14,1];
+const zoomLine = ['step',['zoom'],.3,12,.5];
 const withinContest = ['!=',['get','status'],'outside'];
 
 function hatch(color, type) {
@@ -57,7 +57,7 @@ function hatch(color, type) {
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = color;
   ctx.fillRect(0,0,8,8);
-  ctx.strokeStyle = type==='tie' ? '#adadad' : '#858580';
+  ctx.strokeStyle = type==='tie' ? '#21342c' : '#858580';
   ctx.lineWidth = 1;
   if (type==='unavailable') ctx.strokeRect(3,3,1,1);
   else {
@@ -91,7 +91,7 @@ export function createMap(host, geometry, events) {
   }
   function fit(bounds, animate = true, maxZoom = 17) {
     frame = bounds;
-    if (loaded) map.fitBounds(bounds,{padding:24,maxZoom,duration:animate ? 650 : 0});
+    if (loaded) map.fitBounds(bounds,{padding:24,maxZoom,duration:animate && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 150 : 0});
   }
   const resize = new ResizeObserver(() => {
     if (!loaded) return;
@@ -124,14 +124,14 @@ export function createMap(host, geometry, events) {
         paint:{'fill-pattern':'hatch-'+status,'fill-opacity':state.shading/100}},symbolLayer);
     }
     map.addLayer({id:'precinct-outline',type:'line',source:'precincts',
-      paint:{'line-color':'#fff','line-width':zoomLine,
+      paint:{'line-color':'#fff','line-width':['step',['zoom'],.3,12,.5],
         'line-opacity':['interpolate',['linear'],['zoom'],9,['case',withinContest,.30,.15],14,['case',withinContest,.70,.15]]}},symbolLayer);
     map.addLayer({id:'county-edge',type:'line',source:'county-edge',
       paint:{'line-color':'#3a4a42','line-width':1.5}},symbolLayer);
     map.addLayer({id:'county-void',type:'fill',source:'county-mask',paint:{'fill-color':'#e4e3de','fill-antialias':false}});
     map.addLayer({id:'precinct-hover',type:'line',source:'precincts',filter:withinContest,
-      paint:{'line-color':'#17241e','line-width':['case',['boolean',['feature-state','hover'],false],1.5,0]}});
-    for (const [id,color,width] of [['pin-case','#fff',5],['pin','#111',2.5]]) map.addLayer({
+      paint:{'line-color':'#21342c','line-width':['case',['boolean',['feature-state','hover'],false],2,0]}});
+    for (const [id,color,width] of [['pin-case','#fff',4],['pin','#835613',2]]) map.addLayer({
       id,type:'line',source:'precincts',filter:['==',['get','precinct'],''],
       paint:{'line-color':color,'line-width':width},
     });
@@ -178,9 +178,9 @@ export function createMap(host, geometry, events) {
       map.setLayoutProperty('county-aerial','visibility',aerial?'visible':'none');
       map.setPaintProperty('county-aerial','raster-opacity',state.aerial/100);
     }
-    const outlines = aerial && state.outlines;
+    const outlines = state.outlines;
     for (const id of ['precinct-fill','precinct-zero','precinct-tie','precinct-unavailable']) {
-      map.setPaintProperty(id,'fill-opacity',outlines ? 0 : state.shading/100);
+      map.setPaintProperty(id,'fill-opacity',outlines ? 0 : ['*',state.shading/100,['coalesce',['get','dim'],1]]);
     }
     map.setPaintProperty('precinct-outline','line-color',outlines ? ['case',withinContest,['get','color'],'#fff'] : '#fff');
     map.setPaintProperty('precinct-outline','line-width',outlines ? 1.25 : zoomLine);

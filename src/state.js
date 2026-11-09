@@ -1,4 +1,4 @@
-export const defaults = { contest: 0, choice: 0, method: 3, measure: 'share', scope: 'winner', precinct: '', basemap: 'streets', shading: 75, aerial: 100, outlines: false, shadingAdjusted: false };
+export const defaults = { contest: 0, choice: 0, method: 3, measure: 'share', scope: 'winner', precinct: '', basemap: 'streets', shading: 85, aerial: 100, outlines: false, shadingAdjusted: false };
 const keys = Object.keys(defaults);
 
 export function createStore(contests, precincts) {

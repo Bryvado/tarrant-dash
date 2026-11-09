@@ -35,9 +35,9 @@ function bar(view, entry, total, winner) {
 export function renderSummary(host, view) {
   const ranked=rankVotes(view.totals), [leader,second]=ranked;
   const tied=isTie(ranked);
-  host.replaceChildren(el('h2',view.contest.name,'contest-title'));
-  if (view.total && second) host.append(el('p',tied ? 'Countywide tie' :
-    `Countywide lead ${formatMetric((leader.count-second.count)/view.total,'margin')}`,'muted'));
+  const heading=el('h2',view.total ? (tied ? 'Tied contest' : view.contest.choices[leader.index].name) : view.contest.name,'contest-title');
+  if(view.total && second) heading.append(el('span',`+${number(100*(leader.count-second.count)/view.total,1)} pp`,'lead-pill'));
+  host.replaceChildren(heading,el('p',view.contest.name,'muted'));
   const others=[];
   for (const entry of ranked) {
     const choice=view.contest.choices[entry.index];
@@ -55,13 +55,15 @@ export function renderSummary(host, view) {
 export function renderPrecinct(host, view, id, chairs, demographics, comparison) {
   const row=view.byId.get(id);
   host.replaceChildren(el('h2',row ? `Precinct ${id}` : 'Precinct'));
-  if (!row) {host.append(el('p','Hover to inspect, click to pin.','muted'));return;}
-  if (comparison) host.append(el('p',comparison));
-  host.append(el('h3','Precinct chairs'));
-  for (const [party,label] of [['DEM','Democratic'],['REP','Republican']]) {
-    const name=chairs?.[party]?.[id] ?? (chairs === undefined ? 'Loading…' : chairs ? 'No roster record' : 'Roster unavailable');
-    host.append(el('p',`${label} · ${name}`));
+  if (!row) {host.replaceChildren(el('p','Hover a precinct · click to pin','muted'));return;}
+  const actions=el('span','','inspector-actions');
+  for(const [id,title,icon] of [['copy-precinct','Copy link','⧉'],['clear-precinct','Clear','×']]){
+    const button=el('button',icon);button.id=id;button.type='button';button.title=title;button.setAttribute('aria-label',title);
+    if(id==='copy-precinct')button.innerHTML='<svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 7h10v10H7zM3 13V3h10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+    actions.append(button);
   }
+  host.firstChild.append(actions);
+  if (comparison) host.append(el('p',comparison));
   for (const entry of row.ranked) if (entry.count) host.append(bar(view,entry,row.total,entry===row.ranked[0] && row.status!=='tie'));
   const split=el('div','','method-split');
   const labels=['Mail','Early','Election Day'];
@@ -86,6 +88,12 @@ export function renderPrecinct(host, view, id, chairs, demographics, comparison)
     const difference=view.query.measure==='density' ? formatMetric(delta,'density') : formatMetric(delta,'margin');
     host.append(el('p',`${delta>=0?'+':''}${difference} vs. contest-wide measure`,'muted'));
   }
+  const roster=el('details','','chair-disclosure');
+  roster.append(el('summary','Precinct chairs'));
+  for(const [party,label] of [['DEM','Democratic'],['REP','Republican']]){
+    roster.append(el('p',`${label} · ${chairs?.[party]?.[id] ?? 'Roster unavailable'}`));
+  }
+  host.append(roster);
   const census=demographics?.precincts[id];
   if (census) {
     host.append(el('p',`2020 Census · ${number(census.total)} residents · ${number(census.vap)} voting age · VTD ${census.vtd}`,'muted'));

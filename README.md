@@ -56,7 +56,7 @@ Keep credentials and raw voter rosters outside the repository and `public/`. Fil
 
 ### Precinct analytics
 
-On the map toolbar, beside **Show whole county**, choose **Compare candidates** to map the vote-share gap between two choices from the November 2026 results. Teal indicates higher share for Candidate A, purple indicates higher share for Candidate B, and the neutral band covers gaps of one percentage point or less. The scatterplot is also available under **Analytics → Precinct charts**. Candidate A comes from the current map contest. Choose Candidate B and its contest independently. The chart includes precincts with valid votes in both contests for the selected voting method. Each share uses its own contest's valid votes. The pooled difference subtracts the two vote shares calculated over the same set of precincts. A local race may cover only part of a precinct.
+At the top of the control rail, choose **Compare** to map the vote-share gap between two choices from the November 2026 results. Teal indicates higher share for Candidate A, purple indicates higher share for Candidate B, and the neutral band covers gaps of one percentage point or less. The scatterplot is also available under **Analytics → Precinct charts**. Candidate A comes from the current map contest. Choose Candidate B and its contest independently. The chart includes precincts with valid votes in both contests for the selected voting method. Each share uses its own contest's valid votes. The pooled difference subtracts the two vote shares calculated over the same set of precincts. A local race may cover only part of a precinct.
 
 **Demographics** plots candidate share against a selected group's share of the 2020 voting-age population. The Texas Legislative Council's [2024 VTD boundaries and 2020 Census counts](https://data.capitol.texas.gov/dataset/vtds) are joined by `VTDKEY`. Suffix parts are combined before matching to the county's precinct geometry. Only matches with at least 98% area overlap in both directions are included. The resulting profiles cover 577 of 707 mapped precincts. The chart reports unweighted Pearson correlation across matched precincts. Census groups can overlap, and precinct associations do not identify how individuals voted.
 
@@ -68,3 +68,12 @@ python scripts/build-demographics.py VTDs_24PG.zip VTDs_24PG_Pop.zip
 ```
 
 The precinct panel includes the public [Democratic](https://tarrantdemocrats.org/precinct-chair-lookup/) and [Republican](https://tarrantgop.org/precinct-chairs-resources/) chair rosters. Run `python scripts/build-chairs.py` to refresh the built-in names and vacancies from the linked spreadsheets. The exported JSON contains precinct numbers, names, and vacancies.
+
+
+### Refined workspace
+
+Results and Compare share a fixed-height primary control group. Precinct search is on the map. The collapsed legend contains one interactive histogram and ramp. Click a bin to dim other precincts and filter the scatterplot, then click again or press Escape to clear it. The log toggle changes the valid-votes axis. Comparison charts label the three largest absolute share gaps.
+
+The inspector collapses when no precinct is pinned. A pinned profile provides copy-link and clear controls and places chair records in a collapsed disclosure. On phones, Controls, Precinct, and Charts share a bottom sheet below the map. The Results/Compare switch and contest selector remain visible.
+
+Verification at 1440×800 measured 2.86% county-area coverage from collapsed overlays in the geometry fallback. Browser checks covered responsive layouts, stable control positions, legend/chart/map linkage, all existing URL parameters, clipboard behavior, three computed text sizes, and WCAG AA contrast for muted text. WebGL rendering was checked with a minimal test basemap to isolate the precinct layer.

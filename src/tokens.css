@@ -1,4 +1,9 @@
 :root{
+  --font:"Public Sans",system-ui,sans-serif;
+  --dem-1:#dbe6f1;--dem-2:#b3cbe3;--dem-3:#7fa6cc;--dem-4:#4f7fb0;--dem-5:#2b5a8c;
+  --rep-1:#f3dcd6;--rep-2:#e6b2a6;--rep-3:#d4806f;--rep-4:#b9533f;--rep-5:#8e3423;
+  --neutral-mid:#efede6;--a-1:#d5ebe5;--a-2:#8fc7b8;--a-3:#2f7a6b;
+  --b-1:#e6dcef;--b-2:#b9a0d0;--b-3:#6b4c8a;--motion:150ms ease-out;
   --chrome:#f7f6f2; --surface:#fff; --void:#e4e3de;
   --ink:#21342c; --muted:#506057; --line:#d3d9d1;
   --accent:#27563f; --accent-soft:#e8efe8; --focus:#835613;

@@ -1,4 +1,4 @@
-const palette = ['#68378c','#9a67b2','#cdb4df','#f3f1ea','#aad6cd','#58a99a','#207467'];
+const palette = ['#6b4c8a','#b9a0d0','#e6dcef','#efede6','#d5ebe5','#8fc7b8','#2f7a6b'];
 const labels = ['B +10 pp or more','B +5 to 10 pp','B +1 to 5 pp','Within 1 pp',
   'A +1 to 5 pp','A +5 to 10 pp','A +10 pp or more'];
 
@@ -23,8 +23,8 @@ export function comparisonMap(view, points, candidateA, candidateB, contestB) {
     }
     if (!row.result) return row;
     unavailable++;
-    keys.set(row.precinct,'unavailable');
-    return {...row,status:'unavailable',color:'#eae5db'};
+    keys.set(row.precinct,'unshared');
+    return {...row,status:'unshared',color:'#e4e3de'};
   });
   const features = {...view.features,features:rows.map(row=>({
     ...row.feature,properties:{precinct:row.precinct,status:row.status,color:row.color},

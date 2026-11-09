@@ -18,11 +18,11 @@ export function createFallback(host, geometry, events) {
     const pattern=svg('pattern',{id:'fallback-'+status,width:8,height:8,patternUnits:'userSpaceOnUse'});
     pattern.append(svg('rect',{width:8,height:8,fill:SPECIAL[status].color}),svg('path',{
       d:status==='tie'?'M0 0L8 8M0 8L8 0':status==='zero'?'M0 8L8 0':'M4 4h1',
-      stroke:status==='tie'?'#adadad':'#888',
+      stroke:status==='tie'?'#21342c':'#888',
     }));
     defs.append(pattern);
   }
-  const group=svg('g'), pin=svg('path',{'pointer-events':'none',fill:'none',stroke:'#111','stroke-width':2.5});
+  const group=svg('g'), pin=svg('path',{'pointer-events':'none',fill:'none',stroke:'#835613','stroke-width':2});
   root.append(defs,group,pin);
   host.append(root);
   const county = boundsFor(geometry.map(row=>row.feature));
@@ -38,7 +38,8 @@ export function createFallback(host, geometry, events) {
     for (const row of view.rows) {
       const path=paths.get(row.precinct);
       path.setAttribute('fill',SPECIAL[row.status]?.pattern ? 'url(#fallback-'+row.status+')' : row.color);
-      path.setAttribute('fill-opacity',state.shading/100);
+      path.setAttribute('fill-opacity',(state.outlines?0:state.shading/100)*(row.dim ?? 1));
+      path.setAttribute('stroke',state.outlines ? row.color : '#fff');
       path.setAttribute('stroke-opacity',row.result?.cast ? '.6':'.15');
       path.setAttribute('pointer-events',row.result?'all':'none');
     }

@@ -43,7 +43,7 @@ export function chartAxis(values, { min=0, max=Infinity, log=false, baseline=fal
     position:value=>(forward(value)-low)/(high-low) };
 }
 export function createChart(svg, excluded, events) {
-  let view, positions=new Map(), dots=[], active=0, hovered='', selected='', hoverRing, pinRing;
+  let view, positions=new Map(), dots=[], active=0, hovered='', selected='', hoverRing, pinRing, filterIds=null, mapRows, logY=false;
   const observer=new ResizeObserver(()=>{if(view) draw();});
   observer.observe(svg);
   function ring(target,id) {
@@ -59,15 +59,17 @@ export function createChart(svg, excluded, events) {
     const width=svg.clientWidth, height=svg.clientHeight;
     if (!width || !height) return;
     const { query,rows,countyMetric,scatter }=view;
+    const logControl=document.getElementById('chart-log');
+    if(logControl)logControl.parentElement.hidden=!!scatter;
     const yValue=row=>scatter ? row.y : row.total;
-    dots=rows.filter(row=>row.ballots>0 && row.total>0 && row.metric?.value!=null)
+    dots=rows.filter(row=>(!filterIds || filterIds.has(row.precinct)) && row.ballots>0 && row.total>0 && row.metric?.value!=null)
       .sort((a,b)=>a.metric.value-b.metric.value || a.precinct.localeCompare(b.precinct));
     const density=query.measure==='density';
     const xAxis=chartAxis([...dots.map(row=>row.metric.value),countyMetric?.value], {
       min:query.measure==='margin'&&query.scope==='candidate'?-1:0,
       max:density?Infinity:1,log:density,
     });
-    const yAxis=chartAxis(dots.map(yValue),scatter ? {max:1} : {baseline:true,minStep:1});
+    const yAxis=chartAxis(dots.map(yValue),scatter ? {max:1} : {baseline:true,minStep:logY?0:1,log:logY});
     const left=57,right=width-18,top=12,bottom=height-45;
     // Extra screen-space padding keeps edge points and selection rings visible.
     const x=v=>left+8+xAxis.position(v)*(right-left-16);
@@ -76,8 +78,11 @@ export function createChart(svg, excluded, events) {
     svg.replaceChildren();
     positions=new Map();
     const append=(tag,attrs,text)=>{const node=element(tag,attrs,text);svg.append(node);return node;};
+    let previousY=Infinity;
     for (const value of yAxis.ticks) {
       const yy=y(value);
+      if(previousY-yy<20)continue;
+      previousY=yy;
       append('line',{x1:left,x2:right,y1:yy,y2:yy,class:'grid-line'});
       append('text',{x:left-5,y:yy+4,'text-anchor':'end'},number(scatter ? value*100 : value,2));
     }
@@ -103,19 +108,29 @@ export function createChart(svg, excluded, events) {
     for (const [index,row] of dots.entries()) {
       const point={x:x(row.metric.value),y:y(yValue(row))};
       positions.set(row.precinct,point);
-      const dot=append('circle',{cx:point.x,cy:point.y,r:3.4,fill:row.color,'fill-opacity':.65,
+      const dot=append('circle',{cx:point.x,cy:point.y,r:row.precinct===hovered?5:2.5,fill:mapRows?.get(row.precinct)?.color ?? row.color,'fill-opacity':.55,
         'data-chart-precinct':row.precinct,id:'chart-point-'+row.precinct,role:'option',
         'aria-label':`Precinct ${row.precinct}, ${formatMetric(row.metric.value,query.measure)}, ${scatter ? formatMetric(row.y,'share')+' candidate A share' : number(row.total)+' votes'}`});
       dot.onpointerenter=event=>{active=index;events.hover(row.precinct,event);};
       dot.onclick=()=>events.pin(row.precinct,true);
     }
-    hoverRing=append('circle',{r:6,fill:'none',stroke:'#17241e','stroke-width':1.5,'pointer-events':'none'});
-    pinRing=append('circle',{r:8,fill:'none',stroke:'#17241e','stroke-width':2,'pointer-events':'none'});
+    if(scatter?.parity) {
+      const outliers=[...dots].sort((a,b)=>Math.abs(b.y-b.metric.value)-Math.abs(a.y-a.metric.value)).slice(0,3);
+      let previousLabelY=-Infinity;
+      for(const row of outliers.sort((a,b)=>y(a.y)-y(b.y))){
+        const point=positions.get(row.precinct);
+        const yy=Math.min(bottom-4,Math.max(top+10,point.y-7,previousLabelY+14));
+        previousLabelY=yy;
+        append('text',{x:Math.min(right-6,point.x+7),y:yy,'text-anchor':point.x>right-40?'end':'start',class:'outlier-label'},row.precinct);
+      }
+    }
+    hoverRing=append('circle',{r:6,fill:'none',stroke:'#21342c','stroke-width':1.5,'pointer-events':'none'});
+    pinRing=append('circle',{r:8,fill:'none',stroke:'#835613','stroke-width':2,'pointer-events':'none'});
     ring(hoverRing,hovered);
     ring(pinRing,selected);
     const zero=view.included.filter(row=>row.ballots===0).length;
     const noVotes=view.included.filter(row=>row.ballots>0 && !row.total).length;
-    const noMetric=view.included.length-dots.length-zero-noVotes;
+    const noMetric=view.included.filter(row=>row.ballots>0 && row.total>0 && row.metric?.value==null).length;
     excluded.textContent=[
       zero&&`${zero} with zero ballots`,noVotes&&`${noVotes} with zero valid votes`,
       noMetric&&`${noMetric} without a comparable measure`,view.rows.length-view.included.length&&`${view.rows.length-view.included.length} outside this contest`,
@@ -144,5 +159,7 @@ export function createChart(svg, excluded, events) {
   svg.onblur=()=>events.hover('');
   svg.onpointerleave=()=>events.hover('');
   return {update(next){view=next;active=0;draw();},
-    hover(id){hovered=id;ring(hoverRing,id);},pin(id){selected=id;ring(pinRing,id);}};
+    filter(ids,colors){filterIds=ids;mapRows=colors;if(view)draw();},
+    log(enabled){logY=enabled;if(view)draw();},
+    hover(id){const old=svg.querySelector('#chart-point-'+hovered);if(old)old.setAttribute('r',2.5);hovered=id;const dot=svg.querySelector('#chart-point-'+id);if(dot)dot.setAttribute('r',5);ring(hoverRing,id);},pin(id){selected=id;ring(pinRing,id);}};
 }

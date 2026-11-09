@@ -2,9 +2,10 @@ import { binIndex } from './metrics.js';
 
 export const PARTY = { DEM: '#2b62a8', REP: '#c0392f', LIB: '#c99a1c', GRN: '#3f8f4f' };
 export const SPECIAL = {
+  unshared:{label:'No shared votes',color:'#e4e3de'},
   outside: { label: 'Not in this contest', color: 'transparent' },
-  zero: { label: 'No votes reported', color: '#d9d9d6', pattern: 'diagonal' },
-  tie: { label: 'Tie', color: '#4d4d4d', pattern: 'cross' },
+  zero: { label: 'No votes reported', color: '#e4e3de', pattern: 'diagonal' },
+  tie: { label: 'Tie', color: '#efede6', pattern: 'cross' },
   unavailable: { label: 'No comparable margin', color: '#eae5db', pattern: 'dotted' },
 };
 export const NONPARTISAN = ['#217a68', '#9e3a86', '#95721d', '#4f823b', '#7752a2', '#3a848c', '#a14f78', '#827831'];
@@ -54,8 +55,17 @@ export function rampColor(base, bin, count, softShare = false) {
   }
   return ramps.get(key);
 }
+export const PARTY_RAMPS={
+  DEM:['#dbe6f1','#b3cbe3','#7fa6cc','#4f7fb0','#2b5a8c'],
+  REP:['#f3dcd6','#e6b2a6','#d4806f','#b9533f','#8e3423'],
+};
+export function displayBin(row, view) {
+  return Math.min(4,Math.floor(row.bin*5/(view.breaks.length+1)));
+}
 export function rowColor(row, contest, query, breaks) {
   if (row.status !== 'data') return SPECIAL[row.status].color;
   const base = row.metric.index === null ? '#217a68' : choiceColor(contest, row.metric.index);
+  const palette=PARTY_RAMPS[contest.choices[row.metric.index]?.party];
+  if(palette) return palette[Math.min(4,Math.floor(binIndex(Math.abs(row.metric.value),breaks)*5/(breaks.length+1)))];
   return rampColor(base, binIndex(Math.abs(row.metric.value), breaks), breaks.length + 1, query.measure === 'share');
 }

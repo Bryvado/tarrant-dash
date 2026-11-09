@@ -15,6 +15,7 @@ export function contestGroup(name) {
 }
 
 function picker(host, id, label, entries, choose) {
+  const spatial=id==='precinct-search';
   const caption = document.createElement('span');
   caption.className = 'control-label';
   caption.textContent = label;
@@ -41,6 +42,10 @@ function picker(host, id, label, entries, choose) {
   popup.append(search,list);
   host.append(caption,trigger,popup);
   let matches = [], active = 0, current;
+  if(spatial){
+    trigger.hidden=true;caption.hidden=true;popup.hidden=false;list.hidden=true;
+    search.onfocus=()=>{list.hidden=false;render();search.setAttribute('aria-expanded','true');};
+  }
   function highlight() {
     const options = [...list.querySelectorAll('[role="option"]')];
     options.forEach((option,i) => option.classList.toggle('active',i===active));
@@ -83,12 +88,12 @@ function picker(host, id, label, entries, choose) {
     }
   }
   function close(focus = false) {
-    popup.hidden = true;
+    if(spatial)list.hidden=true;else popup.hidden = true;
     trigger.setAttribute('aria-expanded','false');
     search.setAttribute('aria-expanded','false');
-    if (focus) trigger.focus();
+    if (focus) (spatial ? search : trigger).focus();
   }
-  function commit(entry) { close(true); choose(entry.value); }
+  function commit(entry) { close(!spatial); choose(entry.value); if(spatial)search.blur(); }
   trigger.onclick = () => {
     if (!popup.hidden) return close();
     popup.hidden = false;
@@ -113,6 +118,7 @@ function picker(host, id, label, entries, choose) {
   return Object.assign(value => {
     current = value;
     renderEntry(trigger,entries.find(entry=>entry.value===value));
+    if(spatial && document.activeElement!==search) search.value=value ? 'Precinct '+value : '';
   },{destroy:()=>{document.removeEventListener('click',outside,true);host.replaceChildren();}});
 }
 
@@ -120,20 +126,22 @@ const segment = (id, title, options) => `<fieldset id="${id}"><legend>${title}</
 
 export function setupControls(host, store, contests, precincts) {
   host.innerHTML = `
+    <div id="workspace-mode" class="segments"><button id="results-mode" type="button" aria-pressed="true">Results</button><button id="compare-map" type="button" aria-pressed="false" aria-controls="comparison-fields">Compare</button></div>
+    <div id="primary-controls">
     <div id="contest-picker" class="picker"></div>
     <div id="comparison-fields" class="plot-controls" hidden></div>
     <div id="choice-controls" class="picker"></div>
     ${segment('measure','Measure',[['share','Share'],['margin','Margin'],['density','Density']])}
-    <details id="more-controls" class="more-controls" open><summary>More controls</summary><div class="control-stack">
+    </div><details id="more-controls" class="more-controls" open><summary>Refine</summary><div class="control-stack"><span class="muted refine-label">Refine</span><div class="scope-slot">
       ${segment('scope','Show votes for',[['winner','Precinct leader'],['candidate','Selected candidate'],['total','All votes']])}
-      <p class="hint" id="scope-hint">All votes is available for density.</p><p class="hint" id="scope-note" role="status" hidden></p>
-      ${segment('method','Voting method',[[3,'All'],[0,'Mail'],[1,'Early'],[2,'Election Day']])}
+      <p class="sr-only" id="scope-hint">All votes is available for density.</p><p class="hint" id="scope-note" role="status" hidden></p>
+      </div>${segment('method','Voting method',[[3,'All'],[0,'Mail'],[1,'Early'],[2,'Election Day']])}
       <div id="precinct-picker" class="picker"></div>
       <details class="display-controls"><summary>Map display</summary><div class="control-stack">
         ${segment('basemap','Basemap',[['streets','Streets'],['aerial','Aerial 2025']])}
         <label for="shading">Precinct shading <output id="shading-value"></output></label><input id="shading" type="range" min="0" max="100">
         <div id="aerial-settings" hidden><label for="aerial">Aerial opacity <output id="aerial-value"></output></label><input id="aerial" type="range" min="0" max="100">
-        <label class="check"><input id="outlines" type="checkbox"> Outlines only</label></div>
+        </div><label class="check"><input id="outlines" type="checkbox"> Outlines only</label>
       </div></details>
     </div></details>`;
   const find = id => host.querySelector('#'+id);
@@ -157,14 +165,14 @@ export function setupControls(host, store, contests, precincts) {
       clearTimeout(noteTimer);
       noteTimer = setTimeout(()=>{note.hidden=true;},2800);
     }
-    if (key === 'basemap' && !current.shadingAdjusted) patch.shading = value === 'aerial' ? 42 : 75;
+    if (key === 'basemap' && !current.shadingAdjusted) patch.shading = value === 'aerial' ? 42 : 85;
     store.set(patch,'controls');
   };
   find('outlines').onchange = e=>store.set({outlines:e.target.checked},'controls');
   find('shading').oninput = e=>store.set({shading:Number(e.target.value),shadingAdjusted:true},'display');
   find('aerial').oninput = e=>store.set({aerial:Number(e.target.value)},'display');
-  const mobile = matchMedia('(max-width:759px)');
-  function resize() { find('more-controls').open = !mobile.matches; }
+  const mobile = matchMedia('(max-width:767px)');
+  function resize() { find('more-controls').open = true; }
   mobile.addEventListener('change',resize);
   resize();
   return (state, view, aerialAvailable) => {
@@ -184,7 +192,9 @@ export function setupControls(host, store, contests, precincts) {
       button.disabled = (key==='scope' && button.value==='total' && state.measure!=='density') ||
         (key==='basemap' && button.value==='aerial' && !aerialAvailable);
     }
-    find('scope-hint').hidden = state.measure==='density';
+    const allVotes=find('scope').querySelector('[value=total]');
+    allVotes.title=allVotes.disabled ? 'All votes is available for density.' : '';
+    allVotes.setAttribute('aria-describedby','scope-hint');
     find('aerial-settings').hidden = state.basemap!=='aerial' || !aerialAvailable;
     for (const key of ['shading','aerial']) {
       find(key).value = state[key];

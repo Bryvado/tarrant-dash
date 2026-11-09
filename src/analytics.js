@@ -71,6 +71,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
     if (compare && aLabel.parentElement !== comparisonFields) comparisonFields.append(aLabel,raceLabel,bLabel);
     if (!compare && aLabel.parentElement !== chartControls) chartControls.append(aLabel,raceLabel,bLabel);
     compareButton.setAttribute('aria-pressed',String(compare));
+    document.getElementById('results-mode').setAttribute('aria-pressed',String(!compare));
     comparisonFields.hidden = !compare;
     normalControls.forEach(control=>{control.hidden=compare;});
     mapControls.classList.toggle('comparing',compare);
@@ -129,6 +130,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
   function change() {draw();onComparisonChange();}
   mode.onchange = group.onchange = b.onchange = a.onchange = change;
   race.onchange = () => {updateB();change();};
+  document.getElementById('results-mode').onclick=()=>{mode.value='distribution';change();};
   compareButton.onclick = () => {
     mode.value = mode.value === 'compare' ? 'distribution' : 'compare';
     change();

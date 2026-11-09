@@ -22,7 +22,7 @@ test('nonpartisan and proposition hues avoid red and blue by more than 25 OKLCH 
       assert.ok(Math.min(delta,360-delta)>25, color);
     }
   }
-  assert.ok(toOklch(SPECIAL.tie.color)[1] < .001, 'gray tie treatment is achromatic');
+  assert.equal(SPECIAL.tie.color, '#efede6', 'tie treatment uses the specified neutral paper tone');
 });
 test('proposition colors follow the choice label, regardless of order', () => {
   const contest = { choices:[{name:' Against '},{name:'FOR'}] };

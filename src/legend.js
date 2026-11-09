@@ -1,103 +1,91 @@
-import { SPECIAL, PARTY, choiceColor, rampColor } from './color.js';
+import { SPECIAL, PARTY_RAMPS, displayBin, choiceColor, rampColor } from './color.js';
 import { number } from './metrics.js';
 import { METHODS } from './controls.js';
 
 export function queryTitle(view) {
-  const { query, contest } = view;
-  const name = query.scope === 'winner' ? 'Leader’s' : query.scope === 'total' ? 'Total contest' : contest.choices[query.choice].name;
-  if (query.measure === 'density') return query.scope === 'winner' ? 'Net vote density (votes/mi²)' : `${name} density (votes/mi²)`;
-  return `${name} ${query.measure === 'share' ? 'share' : 'margin'}`;
+  const {query,contest}=view;
+  const name=query.scope==='winner'?'Leader’s':query.scope==='total'?'Total contest':contest.choices[query.choice].name;
+  if(query.measure==='density')return query.scope==='winner'?'Net vote density (votes/mi²)':name+' density (votes/mi²)';
+  return name+' '+(query.measure==='share'?'share':'margin');
 }
-const make = (tag,text,cls) => {
-  const element = document.createElement(tag);
-  if (text) element.textContent = text;
-  if (cls) element.className = cls;
-  return element;
+const make=(tag,text='',cls='')=>{
+  const node=document.createElement(tag);node.textContent=text;node.className=cls;return node;
 };
-export function legendKey(view, row) {
-  if (row.status !== 'data') return row.status;
-  const party = view.contest.choices[row.metric.index]?.party;
-  return `${party || row.metric.index}:${row.bin}`;
+export function legendKey(view,row){
+  if(row.status!=='data')return row.status;
+  const id=view.contest.choices[row.metric.index]?.party || String(row.metric.index);
+  return id+':'+displayBin(row,view);
 }
-export function renderLegend(host, view, aerial) {
-  const { query, breaks, rows, contest } = view;
-  const data = new Map(), states = new Map();
-  const title = make('summary', `${queryTitle(view)} · ${METHODS[query.method]}`);
-  const body = make('div','','legend-body');
-  host.replaceChildren(title,body);
-  const edgeText = edge => query.measure==='density' ? number(edge,2) : number(edge*100);
-  const bounds = [0,...breaks];
-  for (const row of rows) {
-    if (row.status !== 'data') {
-      states.set(row.status,(states.get(row.status)||0)+1);
-      continue;
+function legend(host,title,bins,special,description,ticks){
+  const summary=make('summary'), strip=make('div','','compact-bins');
+  summary.append(make('span',title,'legend-title'));
+  const maximum=Math.max(1,...bins.map(bin=>bin.count));
+  for(const bin of bins){
+    const button=make('button','','legend-bin');
+    button.type='button';button.dataset.filterKey=bin.key;button.dataset.legendKey=bin.key;
+    button.setAttribute('aria-label',bin.label+' · '+bin.count+' precincts');
+    button.title=button.getAttribute('aria-label');
+    button.setAttribute('aria-pressed','false');
+    const bar=make('i'),color=make('b');
+    bar.style.height=(bin.count?2+12*bin.count/maximum:0)+'px';
+    color.style.backgroundColor=bin.color;
+    button.append(bar,color);strip.append(button);
+  }
+  const mini=make('span','','legend-mini');
+  for(const [key,count] of special)if(count && key!=='outside'){
+    const swatch=make('i','','state-swatch '+key);swatch.title=SPECIAL[key].label+' ('+count+')';mini.append(swatch);
+  }
+  summary.firstChild.append(mini);
+  summary.append(strip);
+  const tickRow=make('div','','legend-ticks');
+  ticks.forEach(tick=>tickRow.append(make('span',tick)));
+  summary.append(tickRow);
+  const detail=make('div','','legend-detail');
+  detail.append(make('p',description));
+  for(const bin of bins)detail.append(make('p',bin.label+' · '+bin.count));
+  const states=make('div','','legend-special');
+  for(const [key,count] of special){
+    if(!count || key==='outside')continue;
+    const meta=SPECIAL[key],button=make('button',meta.label+' ('+count+')');
+    button.type='button';button.dataset.filterKey=key;button.dataset.legendKey=key;
+    button.prepend(make('i','','state-swatch '+key));states.append(button);
+  }
+  detail.append(states,make('p','Select a bin to highlight the map and filter the chart.'));
+  host.replaceChildren(summary,detail);
+}
+export function renderLegend(host,view,aerial){
+  const groups=new Map(),states=new Map();
+  for(const row of view.rows){
+    if(row.status!=='data'){states.set(row.status,(states.get(row.status)||0)+1);continue;}
+    const index=row.metric.index,id=view.contest.choices[index]?.party || String(index);
+    if(!groups.has(id))groups.set(id,{label:view.contest.choices[index]?.party || view.contest.choices[index]?.name || 'All votes',
+      colors:PARTY_RAMPS[id] || Array.from({length:5},(_,i)=>rampColor(index==null?'#217a68':choiceColor(view.contest,index),i,5)),
+      counts:[0,0,0,0,0]});
+    groups.get(id).counts[displayBin(row,view)]++;
+  }
+  const bins=[];
+  const ordered=[...groups].sort(([a],[b])=>(a==='REP'?-1:a==='DEM'?1:0)-(b==='REP'?-1:b==='DEM'?1:0));
+  for(const [id,group] of ordered){
+    const steps=id==='REP'?[4,3,2,1,0]:[0,1,2,3,4];
+    for(const i of steps){
+      const edges=[0,...view.breaks];
+      const indices=edges.map((_,index)=>index).filter(index=>Math.min(4,Math.floor(index*5/edges.length))===i);
+      if(!indices.length)continue;
+      const low=edges[indices[0]], next=edges[indices[indices.length-1]+1];
+      const format=value=>view.query.measure==='density'?number(value,2):number(value*100);
+      const range=format(low)+(next==null?'+':'–'+format(next));
+      bins.push({key:id+':'+i,color:group.colors[i],count:group.counts[i],label:group.label+' · '+range+(view.query.measure==='share'?'%':view.query.measure==='margin'?' pp':' votes/mi²')});
     }
-    const party = contest.choices[row.metric.index]?.party;
-    const id = party || row.metric.index;
-    if (!data.has(id)) data.set(id,{
-      label:party || contest.choices[row.metric.index]?.name || 'All votes',
-      color: row.metric.index===null ? '#217a68' : PARTY[party] || choiceColor(contest,row.metric.index),
-      counts:Array(bounds.length).fill(0),
-    });
-    data.get(id).counts[row.bin]++;
   }
-  for (const [id,row] of data) {
-    const block = make('div','','legend-row');
-    block.append(make('span',row.label,'legend-row-title'));
-    const ramp = make('div','','ramp');
-    row.counts.forEach((count,bin)=>{
-      const cell = make('div','','ramp-cell');
-      cell.dataset.legendKey = `${id}:${bin}`;
-      const low = edgeText(bounds[bin]);
-      const high = bin+1<bounds.length ? edgeText(bounds[bin+1]) : query.measure==='density' || query.measure==='margin' ? '' : '100';
-      cell.title = `${low}${high ? '–'+high : '+'} · ${count} precincts`;
-      const track = make('div','','ramp-track');
-      const bar = make('i');
-      bar.style.height = (count ? 3+13*count/Math.max(...row.counts) : 0)+'px';
-      track.append(bar);
-      const color = make('i','','swatch');
-      color.style.backgroundColor = rampColor(row.color,bin,bounds.length,query.measure==='share');
-      cell.append(track,color,make('span',low,query.measure==='share'&&bin===5?'threshold':''));
-      ramp.append(cell);
-    });
-    block.append(ramp);
-    body.append(block);
-  }
-  const special = make('div','','special-states');
-  for (const [status,count] of states) {
-    const meta = SPECIAL[status], entry = make('span',` ${meta.label} (${count})`);
-    entry.dataset.legendKey = status;
-    entry.prepend(make('i','',`state-swatch ${status}`));
-    special.append(entry);
-  }
-  body.append(special);
-  if (query.measure==='margin' && query.scope==='candidate') body.append(make('p','Trailing precincts use the leading choice’s color.'));
-  if (aerial) body.append(make('p','Colors over imagery are approximate.'));
+  const ticks=view.query.measure==='share'?['0','50','100%']:view.query.measure==='margin'?['Lower margin','Higher margin']:['Lower density','Higher density'];
+  legend(host,queryTitle(view),bins,states,METHODS[view.query.method]+(aerial?' · Colors over imagery are approximate.':''),ticks);
 }
-export function renderComparisonLegend(host, comparison, method, aerial) {
-  const body = make('div','','legend-body');
-  body.append(make('p',`A: ${comparison.candidateA} · B: ${comparison.candidateB}`));
-  const entries = make('div','','comparison-legend');
-  comparison.bins.forEach(({color,label,count},bin)=>{
-    const entry = make('span',` ${label}`);
-    entry.dataset.legendKey = String(bin);
-    entry.title = `${count} precincts`;
-    const swatch = make('i','','state-swatch');
-    swatch.style.backgroundColor = color;
-    entry.prepend(swatch);
-    entries.append(entry);
-  });
-  body.append(entries);
-  if (comparison.unavailable) {
-    const entry = make('span',` No valid votes in both contests (${comparison.unavailable})`);
-    entry.dataset.legendKey = 'unavailable';
-    entry.prepend(make('i','','state-swatch unavailable'));
-    body.append(entry);
-  }
-  if (aerial) body.append(make('p','Colors over imagery are approximate.'));
-  host.replaceChildren(make('summary',`Vote share gap · ${METHODS[method]}`),body);
+export function renderComparisonLegend(host,comparison,method,aerial){
+  const bins=comparison.bins.map((bin,i)=>({...bin,key:String(i)}));
+  legend(host,'Vote share gap',bins,new Map([['unshared',comparison.unavailable]]),
+    'A · '+comparison.candidateA+' / B · '+comparison.candidateB+' · '+METHODS[method],
+    ['B higher','Equal','A higher']);
 }
-
-export function markLegend(host, key) {
-  for (const cell of host.querySelectorAll('[data-legend-key]')) cell.classList.toggle('marked',cell.dataset.legendKey===key);
+export function markLegend(host,key){
+  for(const cell of host.querySelectorAll('[data-legend-key]'))cell.classList.toggle('marked',cell.dataset.legendKey===key);
 }
