@@ -17,9 +17,9 @@ document.addEventListener('click', event => {
   const target = event.target;
   if (target.closest('#plot circle, #precinct')) return;
   if (target.closest('#map')) {
-    if (map || target.closest('path[data-id]')) return;
+    if (target.closest('.maplibregl-canvas, path[data-id]')) return;
   }
   select('');
-});
+}, { capture: true });
 
 start();
