@@ -51,10 +51,11 @@ export function renderSummary(host, view) {
   host.append(el('p',`${view.included.filter(row=>row.total>0).length} of ${view.included.length} precincts in this contest reported votes`,'muted'));
 }
 
-export function renderPrecinct(host, view, id, chairs, demographics) {
+export function renderPrecinct(host, view, id, chairs, demographics, comparison) {
   const row=view.byId.get(id);
   host.replaceChildren(el('h2',row ? `Precinct ${id}` : 'Precinct'));
   if (!row) {host.append(el('p','Hover to inspect, click to pin.','muted'));return;}
+  if (comparison) host.append(el('p',comparison));
   host.append(el('h3','Precinct chairs'));
   for (const [party,label] of [['DEM','Democratic'],['REP','Republican']]) {
     const name=chairs?.[party]?.[id] ?? (chairs === undefined ? 'Loading…' : chairs ? 'No roster record' : 'Roster unavailable');

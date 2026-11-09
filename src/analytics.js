@@ -1,6 +1,7 @@
 import { choiceColor } from './color.js';
 import { formatMetric, number } from './metrics.js';
 import { queryTitle } from './legend.js';
+import { comparisonMap } from './comparison.js';
 
 const groups = {
   hispvap: 'Hispanic',
@@ -31,12 +32,18 @@ function correlation(rows) {
   return xx > 1e-15 && yy > 1e-15 ? xy / Math.sqrt(xx*yy) : null;
 }
 
-export function setupAnalytics(host, chart, contests) {
+export function setupAnalytics(host, chart, contests, mapControls, onComparisonChange) {
   const field = id => host.querySelector('#'+id);
   const mode = field('plot-mode'), a = field('plot-a'), race = field('plot-race');
   const b = field('plot-b'), group = field('plot-group'), caption = field('chart-query');
   const detail = field('plot-detail');
-  let view, state, demographics, previousContest, previousChoice, plotted = new Map();
+  const compareButton = mapControls.querySelector('#compare-map');
+  const comparisonFields = mapControls.querySelector('#comparison-fields');
+  const chartControls = a.parentElement.parentElement;
+  const aLabel = a.parentElement, raceLabel = race.parentElement, bLabel = b.parentElement;
+  const normalControls = ['choice-controls','measure','scope']
+    .map(id=>mapControls.querySelector('#'+id));
+  let view, state, demographics, previousContest, previousChoice, comparison, plotted = new Map();
   addOptions(race, contests, contest => contest.name);
   race.value = contests.length > 1 ? '1' : '0';
   for (const [key, label] of Object.entries(groups)) group.add(new Option(label, key));
@@ -62,8 +69,15 @@ export function setupAnalytics(host, chart, contests) {
   function draw() {
     const compare = mode.value === 'compare';
     const census = mode.value === 'census';
-    a.parentElement.hidden = !compare && !census;
-    race.parentElement.hidden = b.parentElement.hidden = !compare;
+    if (compare && aLabel.parentElement !== comparisonFields) comparisonFields.append(aLabel,raceLabel,bLabel);
+    if (!compare && aLabel.parentElement !== chartControls) chartControls.append(aLabel,raceLabel,bLabel);
+    compareButton.setAttribute('aria-pressed',String(compare));
+    comparisonFields.hidden = !compare;
+    normalControls.forEach(control=>{control.hidden=compare;});
+    mapControls.classList.toggle('comparing',compare);
+    aLabel.hidden = !compare && !census;
+    raceLabel.hidden = bLabel.hidden = !compare;
+    comparison = null;
     group.parentElement.hidden = !census;
     plotted = new Map();
     if (!compare && !census) {
@@ -96,6 +110,8 @@ export function setupAnalytics(host, chart, contests) {
     }
     const count = number(rows.length);
     if (compare) {
+      comparison = comparisonMap(view,plotted,
+        view.contest.choices[candidate].name,otherRace.choices[other].name);
       caption.textContent = rows.length
         ? `${count} shared precincts · pooled A − B ${gap(votesA/totalA-votesB/totalB)} · dashed line shows equal shares. Each share uses valid votes in its own contest.`
         : 'No precincts reported valid votes in both races for this voting method.';
@@ -111,9 +127,13 @@ export function setupAnalytics(host, chart, contests) {
     showDetail();
   }
 
-  mode.onchange = group.onchange = b.onchange = draw;
-  a.onchange = draw;
-  race.onchange = () => {updateB();draw();};
+  function change() {draw();onComparisonChange();}
+  mode.onchange = group.onchange = b.onchange = a.onchange = change;
+  race.onchange = () => {updateB();change();};
+  compareButton.onclick = () => {
+    mode.value = mode.value === 'compare' ? 'distribution' : 'compare';
+    change();
+  };
   return {
     update(nextView, nextState) {
       const changed = view !== nextView;
@@ -131,5 +151,6 @@ export function setupAnalytics(host, chart, contests) {
     },
     setDemographics(data) {demographics = data; if (view && mode.value === 'census') draw();},
     describe,
+    comparison:()=>comparison,
   };
 }

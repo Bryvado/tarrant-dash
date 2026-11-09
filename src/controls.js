@@ -121,6 +121,8 @@ const segment = (id, title, options) => `<fieldset id="${id}"><legend>${title}</
 export function setupControls(host, store, contests, precincts) {
   host.innerHTML = `
     <div id="contest-picker" class="picker"></div>
+    <button type="button" id="compare-map" aria-pressed="false" aria-controls="comparison-fields">Compare candidates</button>
+    <div id="comparison-fields" class="plot-controls" hidden></div>
     <div id="choice-controls" class="picker"></div>
     ${segment('measure','Measure',[['share','Share'],['margin','Margin'],['density','Density']])}
     <details id="more-controls" class="more-controls" open><summary>More controls</summary><div class="control-stack">

@@ -74,6 +74,30 @@ export function renderLegend(host, view, aerial) {
   if (query.measure==='margin' && query.scope==='candidate') body.append(make('p','Trailing precincts use the leading choice’s color.'));
   if (aerial) body.append(make('p','Colors over imagery are approximate.'));
 }
+export function renderComparisonLegend(host, comparison, method, aerial) {
+  const body = make('div','','legend-body');
+  body.append(make('p',`A: ${comparison.candidateA} · B: ${comparison.candidateB}`));
+  const entries = make('div','','comparison-legend');
+  comparison.bins.forEach(({color,label,count},bin)=>{
+    const entry = make('span',` ${label}`);
+    entry.dataset.legendKey = String(bin);
+    entry.title = `${count} precincts`;
+    const swatch = make('i','','state-swatch');
+    swatch.style.backgroundColor = color;
+    entry.prepend(swatch);
+    entries.append(entry);
+  });
+  body.append(entries);
+  if (comparison.unavailable) {
+    const entry = make('span',` No valid votes in both contests (${comparison.unavailable})`);
+    entry.dataset.legendKey = 'unavailable';
+    entry.prepend(make('i','','state-swatch unavailable'));
+    body.append(entry);
+  }
+  if (aerial) body.append(make('p','Colors over imagery are approximate.'));
+  host.replaceChildren(make('summary',`Vote share gap · ${METHODS[method]}`),body);
+}
+
 export function markLegend(host, key) {
   for (const cell of host.querySelectorAll('[data-legend-key]')) cell.classList.toggle('marked',cell.dataset.legendKey===key);
 }

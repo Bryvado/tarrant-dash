@@ -6,7 +6,7 @@ import { createMap } from './map.js';
 import { createFallback } from './fallback.js';
 import { createChart } from './chart.js';
 import { setupAnalytics } from './analytics.js';
-import { renderLegend, markLegend, legendKey } from './legend.js';
+import { renderLegend, renderComparisonLegend, markLegend, legendKey } from './legend.js';
 import { renderSummary, renderPrecinct, renderTooltip } from './panel.js';
 import { number } from './metrics.js';
 
@@ -58,7 +58,7 @@ async function start() {
   const [geo,data]=await Promise.all([loadData('precincts.geojson'),loadData('official.json')]);
   const geometry=prepareGeometry(geo), precincts=new Set(geometry.map(row=>row.precinct));
   const store=createStore(data.contests,precincts);
-  let view, renderer, demographics, chairs, hovered='', drawer=false;
+  let view, renderer, demographics, chairs, lastLegendView, lastLegendAerial, hovered='', drawer=false;
   $('status-text').textContent=`Nov. 3, 2026 · ${number(geometry.length)} precincts · ${data.checks}/${data.checks} checks passed`;
   const syncControls=setupControls($('controls'),store,data.contests,precincts);
   const legend=$('map-legend'), tooltip=$('tooltip');
@@ -75,13 +75,14 @@ async function start() {
       hovered=precinct;
       renderer?.hover(precinct);
       chart.hover(precinct);
-      markLegend(legend,precinct?legendKey(view,row):null);
+      const comparison=analytics.comparison();
+      markLegend(legend,precinct?(comparison ? comparison.keys.get(precinct) : legendKey(view,row)):null);
       if (precinct) {
         renderTooltip(tooltip,view,row);
-        const comparison=analytics.describe(precinct);
-        if (comparison) {
+        const description=analytics.describe(precinct);
+        if (description || comparison) {
           const line=document.createElement('p');
-          line.textContent=comparison;
+          line.textContent=description || 'No comparable vote share';
           tooltip.append(line);
         }
       }
@@ -100,8 +101,28 @@ async function start() {
     ready();
   }};
   const chart=createChart($('plot'),$('excluded'),events);
-  const analytics=setupAnalytics($('chart-section'),chart,data.contests);
-  function updateProfile(id) {renderPrecinct($('profile'),view,id,chairs,demographics);}
+  const analytics=setupAnalytics($('chart-section'),chart,data.contests,$('controls'),()=>{
+    hover('');
+    const state=store.get();
+    renderMap(state);
+    updateProfile(state.precinct);
+  });
+  function updateProfile(id) {
+    const description=analytics.comparison() && (analytics.describe(id) || 'No comparable vote share');
+    renderPrecinct($('profile'),view,id,chairs,demographics,description);
+  }
+  function renderMap(state) {
+    const comparison=analytics.comparison();
+    const mapView=comparison?.view ?? view;
+    const aerial=state.basemap==='aerial' && renderer.aerialAvailable;
+    if (mapView!==lastLegendView || aerial!==lastLegendAerial) {
+      if (comparison) renderComparisonLegend(legend,comparison,state.method,aerial);
+      else renderLegend(legend,view,aerial);
+      lastLegendView=mapView;
+      lastLegendAerial=aerial;
+    }
+    renderer.update(mapView,state);
+  }
   loadData('chairs.json').then(data=>{
     chairs=data;
     updateProfile(store.get().precinct);
@@ -121,10 +142,9 @@ async function start() {
       view=buildView(geometry,data.contests[state.contest],state);
       renderSummary($('totals'),view);
     }
-    if (changed || state.basemap!==previous?.basemap || !previous) renderLegend(legend,view,state.basemap==='aerial'&&renderer.aerialAvailable);
     syncControls(state,view,renderer.aerialAvailable);
-    renderer.update(view,state);
     analytics.update(view,state);
+    renderMap(state);
     if (changed || state.precinct!==previous?.precinct) {
       updateProfile(state.precinct);
       chart.pin(state.precinct);
@@ -165,7 +185,7 @@ async function start() {
   document.addEventListener('click',event=>{
     const target=event.target;
     if (!target.closest('#sources')) $('sources').open=false;
-    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls')) return;
+    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#compare-map')) return;
     pin('');
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape') {hover('');pin('');}});
