@@ -67,4 +67,4 @@ python -m pip install 'shapely>=2.1' pyproj pyshp
 python scripts/build-demographics.py VTDs_24PG.zip VTDs_24PG_Pop.zip
 ```
 
-Use **Load chair rosters** in the precinct panel to open the Democratic tab-separated text and Republican CSV files. The browser matches records by precinct number and displays the names and vacancies for the current tab. The files and contact fields stay off the public deployment.
+The precinct panel includes the public [Democratic](https://tarrantdemocrats.org/precinct-chair-lookup/) and [Republican](https://tarrantgop.org/precinct-chairs-resources/) chair rosters. Run `python scripts/build-chairs.py` to refresh the built-in names and vacancies from the linked spreadsheets. The exported JSON contains precinct numbers, names, and vacancies.

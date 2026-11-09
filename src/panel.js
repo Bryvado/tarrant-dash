@@ -55,6 +55,11 @@ export function renderPrecinct(host, view, id, chairs, demographics) {
   const row=view.byId.get(id);
   host.replaceChildren(el('h2',row ? `Precinct ${id}` : 'Precinct'));
   if (!row) {host.append(el('p','Hover to inspect, click to pin.','muted'));return;}
+  host.append(el('h3','Precinct chairs'));
+  for (const [party,label] of [['DEM','Democratic'],['REP','Republican']]) {
+    const name=chairs?.[party]?.[id] ?? (chairs === undefined ? 'Loading…' : chairs ? 'No roster record' : 'Roster unavailable');
+    host.append(el('p',`${label} · ${name}`));
+  }
   for (const entry of row.ranked) if (entry.count) host.append(bar(view,entry,row.total,entry===row.ranked[0] && row.status!=='tie'));
   const split=el('div','','method-split');
   const labels=['Mail','Early','Election Day'];
@@ -86,10 +91,7 @@ export function renderPrecinct(host, view, id, chairs, demographics) {
       ['Hispanic','hispvap'],['Anglo','anglovap'],['Black','blackvap'],['Asian','asianvap'],
     ].map(([label,key])=>`${label} ${percent(census[key],census.vap)}`).join(' · ')+' of voting-age population','muted'));
   } else if (demographics) host.append(el('p','No closely matching 2024 VTD for this precinct.','muted'));
-  host.append(el('h3','Precinct chairs'));
-  for (const [party,label] of [['DEM','Democratic'],['REP','Republican']]) {
-    host.append(el('p',`${label} · ${chairs?.[party]?.[id] ?? (chairs?.[party] ? 'No roster record' : 'Load roster')}`));
-  }
+
 }
 
 export function renderTooltip(host, view, row) {

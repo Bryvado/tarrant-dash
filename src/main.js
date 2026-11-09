@@ -6,7 +6,6 @@ import { createMap } from './map.js';
 import { createFallback } from './fallback.js';
 import { createChart } from './chart.js';
 import { setupAnalytics } from './analytics.js';
-import { setupChairs } from './chairs.js';
 import { renderLegend, markLegend, legendKey } from './legend.js';
 import { renderSummary, renderPrecinct, renderTooltip } from './panel.js';
 import { number } from './metrics.js';
@@ -19,6 +18,7 @@ app.innerHTML=`
       <h2>Sources &amp; coverage</h2><p>Unofficial county returns. Current precinct boundaries are used for display. Local contests cover the Tarrant portion and may cover only part of a precinct.</p>
       <p><a href="https://www.tarrantcountytx.gov/content/dam/main/elections/2026/1126/reports/precinct.pdf" target="_blank" rel="noopener">Nov. 5 precinct report</a> · <a href="https://www.tarrantcountytx.gov/content/dam/main/elections/2026/1126/reports/cumulative.pdf" target="_blank" rel="noopener">Nov. 4 cumulative report</a></p>
       <p>Density uses the mapped area of the full precinct. Census profiles use 2020 population on <a href="https://data.capitol.texas.gov/dataset/vtds" target="_blank" rel="noopener">2024 Texas VTDs</a>. Voting-age population measures residents age 18 or older.</p>
+      <p>Precinct chairs are from the <a href="https://tarrantdemocrats.org/precinct-chair-lookup/" target="_blank" rel="noopener">Tarrant County Democratic Party</a> and <a href="https://tarrantgop.org/precinct-chairs-resources/" target="_blank" rel="noopener">Tarrant County GOP</a> public rosters.</p>
     </div></details></div></header>
   <main class="workspace">
     <section class="map-pane" aria-label="Precinct map">
@@ -32,17 +32,7 @@ app.innerHTML=`
     <aside id="controls" class="controls" aria-label="Map controls"></aside>
     <aside id="analytics" class="analytics" aria-label="Analytics">
       <section id="totals" class="analytics-section summary-section" aria-label="Contest summary"></section>
-      <section class="analytics-section precinct-section" aria-label="Precinct details">
-        <div id="profile"></div>
-        <details id="chair-import"><summary>Load chair rosters</summary>
-          <p class="muted">Files stay in this tab. Only chair names and vacancies are displayed.</p>
-          <div class="plot-controls">
-            <label>Democratic roster (.txt)<input type="file" accept=".txt,.tsv" data-party="DEM"></label>
-            <label>Republican roster (.csv)<input type="file" accept=".csv" data-party="REP"></label>
-          </div>
-          <p role="status" class="muted"></p>
-        </details>
-      </section>
+      <section id="profile" class="analytics-section precinct-section" aria-label="Precinct details"></section>
       <section id="chart-section" class="analytics-section chart-section" aria-label="Precinct charts"><h2>Precinct charts</h2>
         <div class="plot-controls">
           <label>View<select id="plot-mode"><option value="distribution">Distribution</option><option value="compare">Compare candidates</option><option value="census">Demographics</option></select></label>
@@ -112,8 +102,11 @@ async function start() {
   const chart=createChart($('plot'),$('excluded'),events);
   const analytics=setupAnalytics($('chart-section'),chart,data.contests);
   function updateProfile(id) {renderPrecinct($('profile'),view,id,chairs,demographics);}
-  setupChairs($('chair-import'),precincts,rosters=>{
-    chairs=rosters;
+  loadData('chairs.json').then(data=>{
+    chairs=data;
+    updateProfile(store.get().precinct);
+  }).catch(()=>{
+    chairs=null;
     updateProfile(store.get().precinct);
   });
   loadData('demographics.json').then(data=>{
@@ -172,7 +165,7 @@ async function start() {
   document.addEventListener('click',event=>{
     const target=event.target;
     if (!target.closest('#sources')) $('sources').open=false;
-    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#chair-import')) return;
+    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls')) return;
     pin('');
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape') {hover('');pin('');}});
