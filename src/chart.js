@@ -8,6 +8,40 @@ function element(tag, attributes, text) {
   if (text) result.textContent=text;
   return result;
 }
+// Fit each contest independently; retain every plotted point and the county reference.
+export function chartAxis(values, { min=0, max=Infinity, log=false, baseline=false, minStep=0 }={}) {
+  const forward=log ? Math.log1p : value=>value;
+  const inverse=log ? Math.expm1 : value=>value;
+  const finite=values.filter(Number.isFinite).map(forward);
+  let low=baseline ? forward(min) : Math.min(...finite);
+  let high=Math.max(...finite);
+  if (!finite.length) { low=0; high=1; }
+  const padding=Math.max((high-low)*.05, log?.02:.005);
+  low=Math.max(forward(min),low-padding);
+  high=Math.min(forward(max),high+padding);
+  if (high<=low) high=low+1;
+  const rough=(high-low)/4;
+  const magnitude=10**Math.floor(Math.log10(rough));
+  const step=Math.max(minStep,[1,2,2.5,5,10].find(value=>value*magnitude>=rough)*magnitude);
+  low=Math.max(forward(min),Math.floor(low/step)*step);
+  high=Math.min(forward(max),Math.ceil(high/step)*step);
+  const ticks=[];
+  if (log) {
+    if (low===0) ticks.push(0);
+    for (let power=-3;power<=12;power++) {
+      for (const multiplier of [1,2,5]) {
+        const value=multiplier*10**power;
+        if (forward(value)>=low && forward(value)<=high) ticks.push(value);
+      }
+    }
+  } else {
+    for (let value=Math.ceil(low/step)*step;value<=high+step*1e-8;value+=step) {
+      ticks.push(Number(value.toPrecision(12)));
+    }
+  }
+  return { min:inverse(low),max:inverse(high),ticks,
+    position:value=>(forward(value)-low)/(high-low) };
+}
 export function createChart(svg, excluded, events) {
   let view, positions=new Map(), dots=[], active=0, hovered='', selected='', hoverRing, pinRing;
   const observer=new ResizeObserver(()=>{if(view) draw();});
@@ -27,31 +61,36 @@ export function createChart(svg, excluded, events) {
     const { query,rows,countyMetric }=view;
     dots=rows.filter(row=>row.ballots>0 && row.total>0 && row.metric?.value!=null)
       .sort((a,b)=>a.metric.value-b.metric.value || a.precinct.localeCompare(b.precinct));
-    const maxY=Math.max(1,...dots.map(row=>row.total));
     const density=query.measure==='density';
-    const minX=query.measure==='margin'&&query.scope==='candidate'?-1:0;
-    const maxX=density ? Math.max(1,countyMetric?.value||0,...dots.map(row=>row.metric.value)) : 1;
-    const left=57,right=width-14,top=12,bottom=height-45;
-    const x=v=>left+(density?Math.log1p(v)/Math.log1p(maxX):(v-minX)/(maxX-minX))*(right-left);
-    const y=v=>bottom-v/maxY*(bottom-top);
+    const xAxis=chartAxis([...dots.map(row=>row.metric.value),countyMetric?.value], {
+      min:query.measure==='margin'&&query.scope==='candidate'?-1:0,
+      max:density?Infinity:1,log:density,
+    });
+    const yAxis=chartAxis(dots.map(row=>row.total),{baseline:true,minStep:1});
+    const left=57,right=width-18,top=12,bottom=height-45;
+    // Extra screen-space padding keeps edge points and selection rings visible.
+    const x=v=>left+8+xAxis.position(v)*(right-left-16);
+    const y=v=>bottom-8-yAxis.position(v)*(bottom-top-16);
     svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
     svg.replaceChildren();
     positions=new Map();
     const append=(tag,attrs,text)=>{const node=element(tag,attrs,text);svg.append(node);return node;};
-    for (let i=0;i<=4;i++) {
-      const value=i*maxY/4, yy=y(value);
+    for (const value of yAxis.ticks) {
+      const yy=y(value);
       append('line',{x1:left,x2:right,y1:yy,y2:yy,class:'grid-line'});
-      append('text',{x:left-5,y:yy+4,'text-anchor':'end'},number(Math.round(value)));
+      append('text',{x:left-5,y:yy+4,'text-anchor':'end'},number(value));
     }
-    const ticks=density ? [0,...[1,10,100,1000,10000,100000,1000000].filter(v=>v<maxX && x(v)>left+15)] : [minX,(minX+1)/2,1];
-    const sparse=ticks.filter((v,i)=>i===0 || x(v)-x(ticks[i-1])>24);
-    for (const value of sparse) {
+    let lastTick=-Infinity;
+    for (const value of xAxis.ticks) {
       const xx=x(value);
+      if (xx-lastTick<42) continue;
+      lastTick=xx;
       append('line',{x1:xx,x2:xx,y1:top,y2:bottom,class:'grid-line'});
-      append('text',{x:xx,y:bottom+17,'text-anchor':'middle'},number(density?value:value*100));
+      const label=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(density?value:value*100);
+      append('text',{x:xx,y:bottom+17,'text-anchor':'middle'},label);
     }
     for (const [value,className] of [[query.measure==='share'?.5:query.measure==='margin'?0:null,'reference'],[countyMetric?.value,'county-reference']]) {
-      if (value==null || value<minX || value>maxX) continue;
+      if (value==null || value<xAxis.min || value>xAxis.max) continue;
       append('line',{x1:x(value),x2:x(value),y1:top,y2:bottom,class:className});
     }
     append('text',{x:(left+right)/2,y:height-7,'text-anchor':'middle'},density?'Votes/mi² · log scale':query.measure==='share'?'Share (%)':'Margin (pp)');
