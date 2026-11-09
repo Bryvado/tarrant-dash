@@ -9,7 +9,7 @@ function gapBin(gap) {
   return 3 + Math.sign(gap)*strength;
 }
 
-export function comparisonMap(view, points, candidateA, candidateB) {
+export function comparisonMap(view, points, candidateA, candidateB, contestB) {
   const keys = new Map();
   const counts = palette.map(()=>0);
   let unavailable = 0;
@@ -31,7 +31,7 @@ export function comparisonMap(view, points, candidateA, candidateB) {
   }))};
   return {
     view:{...view,rows,features,byId:new Map(rows.map(row=>[row.precinct,row]))},
-    keys, unavailable, candidateA, candidateB,
+    keys, unavailable, points, candidateA, candidateB, contestA:view.contest.name, contestB,
     bins:palette.map((color,index)=>({color,label:labels[index],count:counts[index]})),
   };
 }

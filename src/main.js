@@ -7,7 +7,7 @@ import { createFallback } from './fallback.js';
 import { createChart } from './chart.js';
 import { setupAnalytics } from './analytics.js';
 import { renderLegend, renderComparisonLegend, markLegend, legendKey } from './legend.js';
-import { renderSummary, renderPrecinct, renderTooltip } from './panel.js';
+import { renderSummary, renderPrecinct, renderTooltip, renderComparisonTooltip } from './panel.js';
 import { number } from './metrics.js';
 
 const app=document.querySelector('#app');
@@ -81,20 +81,24 @@ async function start() {
       chart.hover(precinct);
       const comparison=analytics.comparison();
       markLegend(legend,precinct?(comparison ? comparison.keys.get(precinct) : legendKey(view,row)):null);
-      if (precinct) {
+      if (precinct && comparison) {
+        renderComparisonTooltip(tooltip,comparison,precinct);
+      } else if (precinct) {
         renderTooltip(tooltip,view,row);
         const description=analytics.describe(precinct);
-        if (description || comparison) {
+        if (description) {
           const line=document.createElement('p');
-          line.textContent=description || 'No comparable vote share';
+          line.textContent=description;
           tooltip.append(line);
         }
       }
     }
     tooltip.hidden=!precinct||!event;
     if (!tooltip.hidden) {
-      tooltip.style.left=Math.max(8,Math.min(innerWidth-tooltip.offsetWidth-8,event.clientX+14))+'px';
-      tooltip.style.top=Math.max(8,Math.min(innerHeight-tooltip.offsetHeight-8,event.clientY+14))+'px';
+      const {offsetWidth:width,offsetHeight:height}=tooltip;
+      const {clientX:x,clientY:y}=event;
+      tooltip.style.left=Math.max(8,x+14+width<=innerWidth-8 ? x+14 : x-14-width)+'px';
+      tooltip.style.top=Math.max(8,y+14+height<=innerHeight-8 ? y+14 : y-14-height)+'px';
     }
   }
   const events={ pin, hover, ready, fallback(reason) {

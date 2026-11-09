@@ -95,7 +95,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 #plot text{fill:var(--muted);font-size:var(--small);font-family:inherit}
 #plot circle[data-chart-precinct]{cursor:pointer}
 .grid-line{stroke:#d9dfd9}.reference{stroke:#809789}.county-reference{stroke:#21342c;stroke-dasharray:4 3}
-.tooltip{position:fixed;z-index:10;pointer-events:none;padding:var(--s2) var(--s3);background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 4px 14px #17241e2b;font-size:var(--small);max-width:min(310px,calc(100vw - 16px))}
+.tooltip{position:fixed;width:max-content;z-index:10;pointer-events:none;padding:var(--s2) var(--s3);background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 4px 14px #17241e2b;font-size:var(--small);max-width:min(310px,calc(100vw - 16px))}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .sheet-tabs,#drawer-toggle{display:none}
 @media(min-width:760px) and (max-width:1100px){
@@ -133,3 +133,12 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 #comparison-fields{margin:0}
 .comparison-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 8px;margin:4px 0}
 .comparison-legend .marked,.legend-body>[data-legend-key].marked{outline:1px solid var(--ink)}
+.comparison-tip-header,.comparison-tip-row{display:flex;align-items:center;gap:8px}
+.comparison-tip-header{justify-content:space-between}
+.comparison-tip-gap,.comparison-tip-tag{border-radius:4px;background:#f0eee8;padding:2px 5px;font-weight:650;white-space:nowrap}
+.comparison-tip-gap.a,.comparison-tip-tag.a{color:#14584d;background:#dcefe9}
+.comparison-tip-gap.b,.comparison-tip-tag.b{color:#613481;background:#efe4f5}
+.comparison-tip-row{margin-top:7px}
+.comparison-tip-name{flex:1;min-width:0;overflow-wrap:anywhere}
+.comparison-tip-name>span{display:block}
+.comparison-tip-share{font-variant-numeric:tabular-nums;white-space:nowrap}

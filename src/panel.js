@@ -95,6 +95,34 @@ export function renderPrecinct(host, view, id, chairs, demographics, comparison)
 
 }
 
+export function renderComparisonTooltip(host, comparison, id) {
+  const header=el('div','','comparison-tip-header');
+  header.append(el('strong',`Precinct ${id}`));
+  host.replaceChildren(header);
+  const point=comparison.points.get(id);
+  if (!point) {
+    host.append(el('p','No valid votes in one or both contests.','muted'));
+    return;
+  }
+  const shareA=point.y, shareB=point.metric.value;
+  const difference=shareA-shareB;
+  const side=difference > 1e-12 ? 'a' : difference < -1e-12 ? 'b' : '';
+  const magnitude=Math.abs(difference)*100;
+  const gap=side ? `${side.toUpperCase()} +${magnitude < .05 ? '<0.1' : magnitude.toFixed(1)} pp` : 'Equal shares';
+  header.append(el('span',gap,'comparison-tip-gap '+side));
+  for (const [side,name,contest,share] of [
+    ['A',comparison.candidateA,comparison.contestA,shareA],
+    ['B',comparison.candidateB,comparison.contestB,shareB],
+  ]) {
+    const row=el('div','','comparison-tip-row');
+    const label=el('div','','comparison-tip-name');
+    label.append(el('strong',name),el('span',contest,'muted'));
+    row.append(el('span',side,'comparison-tip-tag '+side.toLowerCase()),
+      label,el('strong',`${(share*100).toFixed(1)}%`,'comparison-tip-share'));
+    host.append(row);
+  }
+}
+
 export function renderTooltip(host, view, row) {
   host.replaceChildren(el('strong',`Precinct ${row.precinct}`));
   for (const entry of row.ranked.slice(0,2)) {

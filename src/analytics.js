@@ -110,7 +110,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
     const count = number(rows.length);
     if (compare) {
       comparison = comparisonMap(view,plotted,
-        view.contest.choices[candidate].name,otherRace.choices[other].name);
+        view.contest.choices[candidate].name,otherRace.choices[other].name,otherRace.name);
       caption.textContent = rows.length
         ? `${count} shared precincts · pooled A − B ${gap(votesA/totalA-votesB/totalB)} · dashed line shows equal shares. Each share uses valid votes in its own contest.`
         : 'No precincts reported valid votes in both races for this voting method.';
