@@ -24,7 +24,11 @@ app.innerHTML=`
     <section class="map-pane" aria-label="Precinct map">
       <div id="map" class="map-loading" aria-busy="true"></div>
       <div id="loading" role="status">Loading precinct map…</div>
-      <div class="map-actions"><button id="whole" type="button">Show whole county</button><button id="drawer-toggle" type="button" aria-controls="analytics" aria-expanded="false">Analytics</button></div>
+      <div class="map-actions">
+        <button id="whole" type="button">Show whole county</button>
+        <button id="compare-map" type="button" aria-pressed="false" aria-controls="comparison-fields">Compare candidates</button>
+        <button id="drawer-toggle" type="button" aria-controls="analytics" aria-expanded="false">Analytics</button>
+      </div>
       <details id="map-legend" class="map-legend" open></details>
       <p id="fallback-note" class="fallback-note" hidden></p>
     </section>
@@ -101,7 +105,7 @@ async function start() {
     ready();
   }};
   const chart=createChart($('plot'),$('excluded'),events);
-  const analytics=setupAnalytics($('chart-section'),chart,data.contests,$('controls'),()=>{
+  const analytics=setupAnalytics($('chart-section'),chart,data.contests,$('controls'),$('compare-map'),()=>{
     hover('');
     const state=store.get();
     renderMap(state);
@@ -173,6 +177,12 @@ async function start() {
     $('controls-tab').setAttribute('aria-selected',String(!analytics));
     $('analytics-tab').setAttribute('aria-selected',String(analytics));
   }
+  $('compare-map').addEventListener('click',()=>{
+    if ($('compare-map').getAttribute('aria-pressed')==='true') {
+      showTab(false);
+      $('plot-a').focus();
+    }
+  });
   $('controls-tab').onclick=()=>showTab(false);
   $('analytics-tab').onclick=()=>showTab(true);
   $('controls-tab').onkeydown=$('analytics-tab').onkeydown=event=>{

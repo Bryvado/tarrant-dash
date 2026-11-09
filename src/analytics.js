@@ -32,12 +32,11 @@ function correlation(rows) {
   return xx > 1e-15 && yy > 1e-15 ? xy / Math.sqrt(xx*yy) : null;
 }
 
-export function setupAnalytics(host, chart, contests, mapControls, onComparisonChange) {
+export function setupAnalytics(host, chart, contests, mapControls, compareButton, onComparisonChange) {
   const field = id => host.querySelector('#'+id);
   const mode = field('plot-mode'), a = field('plot-a'), race = field('plot-race');
   const b = field('plot-b'), group = field('plot-group'), caption = field('chart-query');
   const detail = field('plot-detail');
-  const compareButton = mapControls.querySelector('#compare-map');
   const comparisonFields = mapControls.querySelector('#comparison-fields');
   const chartControls = a.parentElement.parentElement;
   const aLabel = a.parentElement, raceLabel = race.parentElement, bLabel = b.parentElement;
