@@ -116,6 +116,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .comparison-tip-row{margin-top:7px}
 .comparison-tip-name{flex:1;min-width:0;overflow-wrap:anywhere}
 .comparison-tip-name>span{display:block}
+.comparison-tip-votes{font-size:11px;color:var(--text-muted,#66736e);font-variant-numeric:tabular-nums;white-space:nowrap}
 .comparison-tip-share{font-variant-numeric:tabular-nums;white-space:nowrap}
 .precinct-tip-metric{display:grid;margin-top:7px}
 .precinct-tip-metric strong{font-size:1.25em;font-variant-numeric:tabular-nums}
