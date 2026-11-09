@@ -2,7 +2,7 @@
 
 Personal research project for exploring Tarrant County elections with OpenFreeMap and MapLibre. The repository is public; the project is not being promoted as a public service.
 
-**The starter currently uses synthetic demonstration precincts and votes, not official election data.**
+Uses official Tarrant County November 2026 reports, labeled unofficial: 707 precincts, 118 contests and 733,287 ballots. Candidate and contest totals reconcile across all voting methods.
 
 ## Run locally
 
@@ -50,6 +50,6 @@ Browser interaction verification on desktop and mobile remains part of productio
 
 ## Data and next steps
 
-See [data contract](docs/DATA.md), [source inventory](docs/SOURCES.md), and [implementation plan](docs/PLAN.md). Replace the demonstration only after official results reconcile and historical boundary versions are established. Nonpartisan contest rendering and historical comparisons remain planned work.
+See [data contract](docs/DATA.md), [source inventory](docs/SOURCES.md), and [implementation plan](docs/PLAN.md). Nonpartisan races and propositions are included. Historical comparisons and registration-based turnout remain planned. Geometry is the current county snapshot, with an exact precinct-ID join.
 
 Keep credentials and raw voter rosters outside the repository and `public/`. Files in `public/` are delivered to browsers. The package's `private: true` prevents npm publication; it does not control GitHub visibility. Authentication is optional for this personal project, rather than a requirement for setup.
