@@ -126,7 +126,7 @@ export function renderComparisonTooltip(host, comparison, id) {
     const row=el('div','','comparison-tip-row');
     const label=el('div','','comparison-tip-name');
     label.append(el('strong',name),el('span',contest,'muted'));
-    if (Number.isFinite(votes)) label.append(el('span',`${number(votes)} votes / ${number(totalVotes)} valid`,'comparison-tip-votes'));
+    if (Number.isFinite(votes)) label.append(el('span',`${number(votes)} votes`,'comparison-tip-votes'));
     row.append(el('span',side,'comparison-tip-tag '+side.toLowerCase()),
       label,el('strong',`${(share*100).toFixed(1)}%`,'comparison-tip-share'));
     host.append(row);
