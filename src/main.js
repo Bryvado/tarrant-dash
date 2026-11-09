@@ -5,7 +5,9 @@ import { setupControls } from './controls.js';
 import { createMap } from './map.js';
 import { createFallback } from './fallback.js';
 import { createChart } from './chart.js';
-import { renderLegend, markLegend, legendKey, queryTitle } from './legend.js';
+import { setupAnalytics } from './analytics.js';
+import { setupChairs } from './chairs.js';
+import { renderLegend, markLegend, legendKey } from './legend.js';
 import { renderSummary, renderPrecinct, renderTooltip } from './panel.js';
 import { number } from './metrics.js';
 
@@ -16,7 +18,7 @@ app.innerHTML=`
     <details id="sources"><summary>Sources</summary><div class="sources-popover">
       <h2>Sources &amp; coverage</h2><p>Unofficial county returns. Current precinct boundaries are used for display. Local contests cover the Tarrant portion and may cover only part of a precinct.</p>
       <p><a href="https://www.tarrantcountytx.gov/content/dam/main/elections/2026/1126/reports/precinct.pdf" target="_blank" rel="noopener">Nov. 5 precinct report</a> · <a href="https://www.tarrantcountytx.gov/content/dam/main/elections/2026/1126/reports/cumulative.pdf" target="_blank" rel="noopener">Nov. 4 cumulative report</a></p>
-      <p>Density uses the mapped area of the full precinct. Registration denominators and precinct chair records are pending.</p>
+      <p>Density uses the mapped area of the full precinct. Census profiles use 2020 population on <a href="https://data.capitol.texas.gov/dataset/vtds" target="_blank" rel="noopener">2024 Texas VTDs</a>. Voting-age population measures residents age 18 or older.</p>
     </div></details></div></header>
   <main class="workspace">
     <section class="map-pane" aria-label="Precinct map">
@@ -30,10 +32,28 @@ app.innerHTML=`
     <aside id="controls" class="controls" aria-label="Map controls"></aside>
     <aside id="analytics" class="analytics" aria-label="Analytics">
       <section id="totals" class="analytics-section summary-section" aria-label="Contest summary"></section>
-      <section id="profile" class="analytics-section precinct-section" aria-label="Precinct details"></section>
-      <section class="analytics-section chart-section" aria-label="Distribution chart"><h2>Distribution</h2><p id="chart-query" class="muted"></p>
+      <section class="analytics-section precinct-section" aria-label="Precinct details">
+        <div id="profile"></div>
+        <details id="chair-import"><summary>Load chair rosters</summary>
+          <p class="muted">Files stay in this tab. Only chair names and vacancies are displayed.</p>
+          <div class="plot-controls">
+            <label>Democratic roster (.txt)<input type="file" accept=".txt,.tsv" data-party="DEM"></label>
+            <label>Republican roster (.csv)<input type="file" accept=".csv" data-party="REP"></label>
+          </div>
+          <p role="status" class="muted"></p>
+        </details>
+      </section>
+      <section id="chart-section" class="analytics-section chart-section" aria-label="Precinct charts"><h2>Precinct charts</h2>
+        <div class="plot-controls">
+          <label>View<select id="plot-mode"><option value="distribution">Distribution</option><option value="compare">Compare candidates</option><option value="census">Demographics</option></select></label>
+          <label hidden>Candidate A · current map contest<select id="plot-a"></select></label>
+          <label hidden>Comparison contest<select id="plot-race"></select></label>
+          <label hidden>Candidate B<select id="plot-b"></select></label>
+          <label hidden>Population group<select id="plot-group"></select></label>
+        </div>
+        <p id="chart-query" class="muted"></p>
         <svg id="plot" tabindex="0" role="listbox" aria-label="Precinct distribution"></svg>
-        <p id="excluded" class="muted"></p></section>
+        <p id="excluded" class="muted"></p><p id="plot-detail" aria-live="polite"></p></section>
     </aside>
   </main><div id="tooltip" class="tooltip" hidden></div><div id="announcement" class="sr-only" aria-live="polite"></div>`;
 const $=id=>document.getElementById(id);
@@ -48,7 +68,7 @@ async function start() {
   const [geo,data]=await Promise.all([loadData('precincts.geojson'),loadData('official.json')]);
   const geometry=prepareGeometry(geo), precincts=new Set(geometry.map(row=>row.precinct));
   const store=createStore(data.contests,precincts);
-  let view, renderer, hovered='', drawer=false;
+  let view, renderer, demographics, chairs, hovered='', drawer=false;
   $('status-text').textContent=`Nov. 3, 2026 · ${number(geometry.length)} precincts · ${data.checks}/${data.checks} checks passed`;
   const syncControls=setupControls($('controls'),store,data.contests,precincts);
   const legend=$('map-legend'), tooltip=$('tooltip');
@@ -66,7 +86,15 @@ async function start() {
       renderer?.hover(precinct);
       chart.hover(precinct);
       markLegend(legend,precinct?legendKey(view,row):null);
-      if (precinct) renderTooltip(tooltip,view,row);
+      if (precinct) {
+        renderTooltip(tooltip,view,row);
+        const comparison=analytics.describe(precinct);
+        if (comparison) {
+          const line=document.createElement('p');
+          line.textContent=comparison;
+          tooltip.append(line);
+        }
+      }
     }
     tooltip.hidden=!precinct||!event;
     if (!tooltip.hidden) {
@@ -82,20 +110,30 @@ async function start() {
     ready();
   }};
   const chart=createChart($('plot'),$('excluded'),events);
+  const analytics=setupAnalytics($('chart-section'),chart,data.contests);
+  function updateProfile(id) {renderPrecinct($('profile'),view,id,chairs,demographics);}
+  setupChairs($('chair-import'),precincts,rosters=>{
+    chairs=rosters;
+    updateProfile(store.get().precinct);
+  });
+  loadData('demographics.json').then(data=>{
+    demographics=data;
+    analytics.setDemographics(demographics);
+    updateProfile(store.get().precinct);
+  }).catch(()=>{});
   function render(state,previous,source) {
     const changed=!view||['contest','choice','method','scope','measure'].some(key=>state[key]!==previous?.[key]);
     if (changed) {
       hover('');
       view=buildView(geometry,data.contests[state.contest],state);
       renderSummary($('totals'),view);
-      $('chart-query').textContent=queryTitle(view)+' · dashed line shows the contest-wide value';
-      chart.update(view);
     }
     if (changed || state.basemap!==previous?.basemap || !previous) renderLegend(legend,view,state.basemap==='aerial'&&renderer.aerialAvailable);
     syncControls(state,view,renderer.aerialAvailable);
     renderer.update(view,state);
+    analytics.update(view,state);
     if (changed || state.precinct!==previous?.precinct) {
-      renderPrecinct($('profile'),view,state.precinct);
+      updateProfile(state.precinct);
       chart.pin(state.precinct);
     }
     if ((!previous || source==='hash' || source==='precinct') && state.precinct) renderer.fitPrecinct(view.byId.get(state.precinct));
@@ -134,7 +172,7 @@ async function start() {
   document.addEventListener('click',event=>{
     const target=event.target;
     if (!target.closest('#sources')) $('sources').open=false;
-    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker')) return;
+    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#chair-import')) return;
     pin('');
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape') {hover('');pin('');}});

@@ -23,7 +23,7 @@ p{margin-top:var(--s1)}
 .workspace{display:grid;grid-template-columns:288px minmax(0,1fr) 380px;grid-template-rows:minmax(0,1fr);min-height:0;position:relative}
 .controls,.analytics{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}
 .controls{grid-column:1;grid-row:1;padding:var(--s4);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:var(--s3)}
-.analytics{grid-column:3;grid-row:1;background:var(--surface);border-left:1px solid var(--line);display:grid;grid-template-rows:244px 226px minmax(310px,1fr)}
+.analytics{grid-column:3;grid-row:1;background:var(--surface);border-left:1px solid var(--line);display:grid;grid-template-rows:244px 226px minmax(min-content,1fr)}
 .analytics-section{padding:var(--s4);min-width:0;border-bottom:1px solid var(--line)}
 .summary-section,.precinct-section{overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 .contest-title{font-size:var(--title);line-height:1.2}
@@ -124,3 +124,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
   .legend-body{max-height:90px}
   .map-legend{bottom:36px}
 }
+
+.plot-controls{display:grid;gap:var(--s1);margin:var(--s2) 0}
+.plot-controls label{display:grid;gap:2px;font-size:var(--small);color:var(--muted)}
+.plot-controls select{width:100%;min-width:0}
+#plot-detail{font-size:var(--small);font-weight:600}

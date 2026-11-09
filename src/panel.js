@@ -51,7 +51,7 @@ export function renderSummary(host, view) {
   host.append(el('p',`${view.included.filter(row=>row.total>0).length} of ${view.included.length} precincts in this contest reported votes`,'muted'));
 }
 
-export function renderPrecinct(host, view, id) {
+export function renderPrecinct(host, view, id, chairs, demographics) {
   const row=view.byId.get(id);
   host.replaceChildren(el('h2',row ? `Precinct ${id}` : 'Precinct'));
   if (!row) {host.append(el('p','Hover to inspect, click to pin.','muted'));return;}
@@ -79,7 +79,17 @@ export function renderPrecinct(host, view, id) {
     const difference=view.query.measure==='density' ? formatMetric(delta,'density') : formatMetric(delta,'margin');
     host.append(el('p',`${delta>=0?'+':''}${difference} vs. contest-wide measure`,'muted'));
   }
-  host.append(el('p','Precinct chairs: not yet loaded','muted'));
+  const census=demographics?.precincts[id];
+  if (census) {
+    host.append(el('p',`2020 Census · ${number(census.total)} residents · ${number(census.vap)} voting age · VTD ${census.vtd}`,'muted'));
+    if (census.vap) host.append(el('p',[
+      ['Hispanic','hispvap'],['Anglo','anglovap'],['Black','blackvap'],['Asian','asianvap'],
+    ].map(([label,key])=>`${label} ${percent(census[key],census.vap)}`).join(' · ')+' of voting-age population','muted'));
+  } else if (demographics) host.append(el('p','No closely matching 2024 VTD for this precinct.','muted'));
+  host.append(el('h3','Precinct chairs'));
+  for (const [party,label] of [['DEM','Democratic'],['REP','Republican']]) {
+    host.append(el('p',`${label} · ${chairs?.[party]?.[id] ?? (chairs?.[party] ? 'No roster record' : 'Load roster')}`));
+  }
 }
 
 export function renderTooltip(host, view, row) {

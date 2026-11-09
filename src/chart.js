@@ -58,7 +58,8 @@ export function createChart(svg, excluded, events) {
   function draw() {
     const width=svg.clientWidth, height=svg.clientHeight;
     if (!width || !height) return;
-    const { query,rows,countyMetric }=view;
+    const { query,rows,countyMetric,scatter }=view;
+    const yValue=row=>scatter ? row.y : row.total;
     dots=rows.filter(row=>row.ballots>0 && row.total>0 && row.metric?.value!=null)
       .sort((a,b)=>a.metric.value-b.metric.value || a.precinct.localeCompare(b.precinct));
     const density=query.measure==='density';
@@ -66,7 +67,7 @@ export function createChart(svg, excluded, events) {
       min:query.measure==='margin'&&query.scope==='candidate'?-1:0,
       max:density?Infinity:1,log:density,
     });
-    const yAxis=chartAxis(dots.map(row=>row.total),{baseline:true,minStep:1});
+    const yAxis=chartAxis(dots.map(yValue),scatter ? {max:1} : {baseline:true,minStep:1});
     const left=57,right=width-18,top=12,bottom=height-45;
     // Extra screen-space padding keeps edge points and selection rings visible.
     const x=v=>left+8+xAxis.position(v)*(right-left-16);
@@ -78,7 +79,7 @@ export function createChart(svg, excluded, events) {
     for (const value of yAxis.ticks) {
       const yy=y(value);
       append('line',{x1:left,x2:right,y1:yy,y2:yy,class:'grid-line'});
-      append('text',{x:left-5,y:yy+4,'text-anchor':'end'},number(value));
+      append('text',{x:left-5,y:yy+4,'text-anchor':'end'},number(scatter ? value*100 : value,2));
     }
     let lastTick=-Infinity;
     for (const value of xAxis.ticks) {
@@ -89,18 +90,22 @@ export function createChart(svg, excluded, events) {
       const label=new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(density?value:value*100);
       append('text',{x:xx,y:bottom+17,'text-anchor':'middle'},label);
     }
-    for (const [value,className] of [[query.measure==='share'?.5:query.measure==='margin'?0:null,'reference'],[countyMetric?.value,'county-reference']]) {
+    for (const [value,className] of (scatter ? [] : [[query.measure==='share'?.5:query.measure==='margin'?0:null,'reference'],[countyMetric?.value,'county-reference']])) {
       if (value==null || value<xAxis.min || value>xAxis.max) continue;
       append('line',{x1:x(value),x2:x(value),y1:top,y2:bottom,class:className});
     }
-    append('text',{x:(left+right)/2,y:height-7,'text-anchor':'middle'},density?'Votes/mi² · log scale':query.measure==='share'?'Share (%)':'Margin (pp)');
-    append('text',{x:10,y:(top+bottom)/2,'text-anchor':'middle',transform:`rotate(-90 10 ${(top+bottom)/2})`},'Valid votes');
+    if (scatter?.parity) {
+      const low=Math.max(xAxis.min,yAxis.min), high=Math.min(xAxis.max,yAxis.max);
+      if (high>low) append('line',{x1:x(low),x2:x(high),y1:y(low),y2:y(high),class:'county-reference'});
+    }
+    append('text',{x:(left+right)/2,y:height-7,'text-anchor':'middle'},scatter?.xLabel ?? (density?'Votes/mi² · log scale':query.measure==='share'?'Share (%)':'Margin (pp)'));
+    append('text',{x:10,y:(top+bottom)/2,'text-anchor':'middle',transform:`rotate(-90 10 ${(top+bottom)/2})`},scatter ? 'Candidate A share (%)' : 'Valid votes');
     for (const [index,row] of dots.entries()) {
-      const point={x:x(row.metric.value),y:y(row.total)};
+      const point={x:x(row.metric.value),y:y(yValue(row))};
       positions.set(row.precinct,point);
       const dot=append('circle',{cx:point.x,cy:point.y,r:3.4,fill:row.color,'fill-opacity':.65,
         'data-chart-precinct':row.precinct,id:'chart-point-'+row.precinct,role:'option',
-        'aria-label':`Precinct ${row.precinct}, ${formatMetric(row.metric.value,query.measure)}, ${number(row.total)} votes`});
+        'aria-label':`Precinct ${row.precinct}, ${formatMetric(row.metric.value,query.measure)}, ${scatter ? formatMetric(row.y,'share')+' candidate A share' : number(row.total)+' votes'}`});
       dot.onpointerenter=event=>{active=index;events.hover(row.precinct,event);};
       dot.onclick=()=>events.pin(row.precinct,true);
     }
@@ -116,7 +121,8 @@ export function createChart(svg, excluded, events) {
       noMetric&&`${noMetric} without a comparable measure`,view.rows.length-view.included.length&&`${view.rows.length-view.included.length} outside this contest`,
     ].filter(Boolean).join(' · ');
     if (excluded.textContent) excluded.textContent += ' omitted.';
-    svg.setAttribute('aria-label',`${queryTitle(view)} by valid contest votes. Use arrow keys to inspect and Enter to pin.`);
+    if (scatter) excluded.textContent=scatter.coverage;
+    svg.setAttribute('aria-label',`${scatter ? scatter.xLabel+' by candidate A share' : queryTitle(view)+' by valid contest votes'}. Use arrow keys to inspect and Enter to pin.`);
   }
   function focusPoint() {
     const row=dots[active];

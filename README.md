@@ -53,3 +53,18 @@ Browser interaction verification on desktop and mobile remains part of productio
 See [data contract](docs/DATA.md), [source inventory](docs/SOURCES.md), and [implementation plan](docs/PLAN.md). Nonpartisan races and propositions are included. Historical comparisons and registration-based turnout remain planned. Geometry is the current county snapshot, with an exact precinct-ID join.
 
 Keep credentials and raw voter rosters outside the repository and `public/`. Files in `public/` are delivered to browsers. The package's `private: true` prevents npm publication; it does not control GitHub visibility. Authentication is optional for this personal project, rather than a requirement for setup.
+
+### Precinct analytics
+
+In **Analytics → Precinct charts**, choose **Compare candidates** to plot two choices from the November 2026 results. Candidate A comes from the current map contest. Choose Candidate B and its contest independently. The chart includes precincts with valid votes in both contests for the selected voting method. Each share uses its own contest's valid votes. The pooled difference subtracts the two vote shares calculated over the same set of precincts. A local race may cover only part of a precinct.
+
+**Demographics** plots candidate share against a selected group's share of the 2020 voting-age population. The Texas Legislative Council's [2024 VTD boundaries and 2020 Census counts](https://data.capitol.texas.gov/dataset/vtds) are joined by `VTDKEY`. Suffix parts are combined before matching to the county's precinct geometry. Only matches with at least 98% area overlap in both directions are included. The resulting profiles cover 577 of 707 mapped precincts. The chart reports unweighted Pearson correlation across matched precincts. Census groups can overlap, and precinct associations do not identify how individuals voted.
+
+To regenerate Census profiles, download `VTDs_24PG.zip` and `VTDs_24PG_Pop.zip` from the portal and run:
+
+```sh
+python -m pip install 'shapely>=2.1' pyproj pyshp
+python scripts/build-demographics.py VTDs_24PG.zip VTDs_24PG_Pop.zip
+```
+
+Use **Load chair rosters** in the precinct panel to open the Democratic tab-separated text and Republican CSV files. The browser matches records by precinct number and displays the names and vacancies for the current tab. The files and contact fields stay off the public deployment.
