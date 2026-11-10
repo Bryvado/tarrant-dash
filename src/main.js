@@ -274,10 +274,10 @@ async function start() {
   document.addEventListener('click',event=>{
     const target=event.target;
     if (!target.closest('#sources')) $('sources').open=false;
-    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#compare-map,#workspace-mode,#profile,#map-legend,#history')) return;
+    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#compare-map,#workspace-mode,#controls,#profile,#map-legend,#history')) return;
     pin('');
   },true);
-  document.addEventListener('keydown',event=>{if(event.key==='Escape') {filterKey=null;hover('');pin('');renderMap(store.get());}});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape') {filterKey=null;hover('');pin('');if(store.get().hbin)store.set({hbin:''},'history');renderMap(store.get());}});
 }
 
 start().catch(error=>{$('loading').textContent=error.message;});

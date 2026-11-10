@@ -325,7 +325,7 @@ button,select,input{font-weight:400}
  #history-swap,#history-scatter,.history-note{display:none}.history-extra{display:none;position:absolute;top:64px;right:6px;background:var(--surface);padding:10px;border:1px solid var(--line);z-index:8}.history-more-open .history-extra{display:flex}
  .history-table-pane{padding:0 6px 4px}.history-table-tools{gap:4px}#history-status,#history-absolute,.history-columns{display:none}#history-search{flex:1;width:100px}
  .history-scroll [data-col=as],.history-scroll [data-col=bv],.history-scroll [data-col=voteChange],.history-scroll [data-col=av]{display:none}
- .history-scroll [data-col=key]{width:70px!important}.history-scroll [data-col=shift]{width:50%}.history-scroll [data-col=bs]{width:70px}.history-scroll td{padding:0 4px}
+ .history-scroll [data-col=key]{width:70px!important}.history-scroll [data-col=shift]{width:calc(100vw - 167px)}.history-scroll [data-col=bs]{width:70px}.history-scroll td{padding:0 4px}
  .history-scroll .history-expanded{height:auto;white-space:normal;text-align:left;padding:8px;background:var(--chrome)}
 }
 @media(max-width:767px){

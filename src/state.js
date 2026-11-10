@@ -17,10 +17,10 @@ export function createStore(contests, precincts) {
     if (state.basemap !== 'aerial') state.basemap = 'streets';
     for (const key of ['shading','aerial']) if (!(state[key] >= 0 && state[key] <= 100)) state[key] = defaults[key];
     state.hmin=Math.max(0,Math.min(100000,Number(state.hmin)||0));
-    state.hheight=Math.max(160/innerHeight*100,Math.min(75,Number(state.hheight)||40));
+    state.hheight=Math.round(10*Math.max(160/innerHeight*100,Math.min(75,Number(state.hheight)||40)))/10;
     if(!['DEM','REP'].includes(state.hparty))state.hparty='DEM';
     if(!['share','margin'].includes(state.hmetric))state.hmetric='share';
-    if(!/^([0-8]|zero|low)?$/.test(state.hbin))state.hbin='';
+    if(!/^([0-8]|zero|low)?$/.test(state.hbin)||state.measure!=='shift')state.hbin='';
     if(!/^(abs|key|as|bs|shift|av|bv|voteChange):(asc|desc)$/.test(state.hsort))state.hsort='abs:desc';
     return state;
   }
