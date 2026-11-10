@@ -63,6 +63,7 @@ export function displayBin(row, view) {
   return Math.min(4,Math.floor(row.bin*5/(view.breaks.length+1)));
 }
 export const PALETTES = {
+  'red-blue':['#c0392f','#2b62a8'],
   'purple-green':['#762a83','#1b7837'],
   'orange-teal':['#b35806','#01665e'],
 };

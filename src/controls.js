@@ -139,7 +139,7 @@ export function setupControls(host, store, contests, precincts) {
       </div>${segment('method','Voting method',[[3,'All'],[0,'Mail'],[1,'Early'],[2,'Election Day']])}
       <div id="precinct-picker" class="picker"></div>
       <details class="display-controls"><summary>Map display</summary><div class="control-stack">
-        <label for="palette">Color palette</label><select id="palette"><option value="default">Default</option><option value="purple-green">Purple–green</option><option value="orange-teal">Orange–teal</option></select>
+        <label for="palette">Color palette</label><select id="palette"><option value="default">Default</option><option value="red-blue">Red–blue</option><option value="purple-green">Purple–green</option><option value="orange-teal">Orange–teal</option></select>
         <label for="classification">Color scale</label><select id="classification">${Object.entries(SCALES).map(([key,[label]])=>`<option value="${key}">${label}</option>`).join('')}</select><p id="scale-hint" class="hint"></p>
         ${segment('basemap' ,'Basemap',[['streets','Streets'],['aerial','Aerial 2025']])}
         <label for="shading">Precinct shading <output id="shading-value"></output></label><input id="shading" type="range" min="0" max="100">
