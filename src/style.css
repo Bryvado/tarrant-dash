@@ -258,3 +258,6 @@ button,select,input{font-weight:400}
 .controls.comparing .scope-slot{height:auto}
 
 .controls.comparing #primary-controls{height:auto}
+
+/* Keep mode navigation usable when the settings panel grows or scrolls. */
+#workspace-mode{flex:0 0 auto;position:sticky;top:0;z-index:20;min-height:34px;background:var(--chrome);box-shadow:0 0 0 8px var(--chrome)}
