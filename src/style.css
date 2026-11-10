@@ -256,3 +256,5 @@ button,select,input{font-weight:400}
 .comparison-totals{display:grid;gap:10px;margin:12px 0 4px}.comparison-totals[hidden]{display:none}.comparison-total{display:grid;gap:3px;padding:8px 10px;border-left:3px solid var(--candidate-color);background:color-mix(in srgb,var(--candidate-color) 6%,white);border-radius:4px;font-size:12px}.comparison-total b{font-size:14px}.comparison-total span{line-height:1.35}
 
 .controls.comparing .scope-slot{height:auto}
+
+.controls.comparing #primary-controls{height:auto}

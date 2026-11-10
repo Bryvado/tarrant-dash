@@ -41,7 +41,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
   const totalsPanel=document.createElement('div');
   totalsPanel.className='comparison-totals';
   totalsPanel.setAttribute('aria-live','polite');
-  comparisonFields.after(totalsPanel);
+  mapControls.querySelector('.scope-slot').prepend(totalsPanel);
   const chartControls = a.parentElement.parentElement;
   const aLabel = a.parentElement, raceLabel = race.parentElement, bLabel = b.parentElement;
   const normalControls = ['choice-controls','measure','scope']
