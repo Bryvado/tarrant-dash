@@ -1,3 +1,4 @@
+import { setupHistory } from './history.js';
 import './style.css';
 import { createStore } from './state.js';
 import { prepareGeometry, buildView } from './view.js';
@@ -50,7 +51,7 @@ app.innerHTML=`
         <svg id="plot" tabindex="0" role="listbox" aria-label="Precinct distribution"></svg>
         <p id="excluded" class="muted"></p><p id="plot-detail" aria-live="polite"></p></section>
     </aside>
-  </main><div id="tooltip" class="tooltip" hidden></div><div id="announcement" class="sr-only" aria-live="polite"></div>`;
+  </main><details id="history" class="history-panel"></details><div id="tooltip" class="tooltip" hidden></div><div id="announcement" class="sr-only" aria-live="polite"></div>`;
 const $=id=>document.getElementById(id);
 
 async function loadData(name) {
@@ -65,6 +66,7 @@ async function start() {
   const store=createStore(data.contests,precincts);
   let view, renderer, demographics, chairs, lastLegendView, lastLegendAerial, filterKey=null, hovered='', drawer=false;
   $('status-text').textContent=`Nov. 3, 2026 · ${number(geometry.length)} precincts · ${data.checks}/${data.checks} checks passed`;
+  const historyTable=setupHistory($('history'),data,precinct=>pin(precinct,true));
   const syncControls=setupControls($('controls'),store,data.contests,precincts);
   $('precinct-picker').classList.add('map-search');
   $('map').parentElement.append($('precinct-picker'));
@@ -194,6 +196,7 @@ async function start() {
       renderSummary($('totals'),view);
     }
     syncControls(state,view,renderer.aerialAvailable);
+    historyTable.update(state);
     analytics.update(view,state);
     renderMap(state);
     if (changed || state.precinct!==previous?.precinct) {
@@ -260,7 +263,7 @@ async function start() {
   document.addEventListener('click',event=>{
     const target=event.target;
     if (!target.closest('#sources')) $('sources').open=false;
-    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#compare-map,#workspace-mode,#profile,#map-legend')) return;
+    if (target.closest('[data-chart-precinct],[data-map-precinct],.maplibregl-canvas,#precinct-picker,.plot-controls,#compare-map,#workspace-mode,#profile,#map-legend,#history')) return;
     pin('');
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape') {filterKey=null;hover('');pin('');renderMap(store.get());}});

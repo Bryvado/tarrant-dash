@@ -261,3 +261,36 @@ button,select,input{font-weight:400}
 
 /* Keep mode navigation usable when the settings panel grows or scrolls. */
 #workspace-mode{flex:0 0 auto;position:sticky;top:0;z-index:20;min-height:34px;background:var(--chrome);box-shadow:0 0 0 8px var(--chrome)}
+
+/* Historical data stays below the workspace, with its own scrollable table. */
+#app{grid-template-rows:48px minmax(0,1fr) auto}
+.history-panel{min-width:0;border-top:1px solid var(--line);background:var(--surface);z-index:4}
+.history-panel>summary{padding:8px 16px;cursor:pointer;background:var(--chrome)}
+.history-content{height:clamp(280px,36dvh,430px);min-height:0;padding:8px 16px;display:grid;grid-template-rows:auto auto auto auto minmax(70px,1fr) auto auto;gap:5px;font-size:12px}
+.history-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.history-toolbar fieldset{display:flex;gap:8px;min-width:0;border:0;padding:0;margin:0}
+.history-toolbar legend{font-weight:600}
+.history-toolbar label{display:grid;gap:2px}
+.history-toolbar select{max-width:280px;width:100%;min-width:70px}
+.history-toolbar button,.history-pages button{padding:4px 8px}
+.history-filters{display:flex;align-items:center;flex-wrap:wrap;gap:16px}
+.history-filters input[type=search]{width:150px;padding:3px 6px}
+.history-scroll{overflow:auto;min-height:0;border:1px solid var(--line)}
+.history-scroll table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap}
+.history-scroll th{position:sticky;top:0;background:var(--chrome);z-index:1;text-align:right;border-bottom:1px solid var(--line)}
+.history-scroll td{padding:5px 8px;text-align:right;border-bottom:1px solid #edf0ec}
+.history-scroll th:first-child,.history-scroll td:first-child{text-align:left}
+.history-scroll th button{border:0;background:none;padding:6px 8px;white-space:nowrap}
+.history-scroll td button{border:0;background:none;padding:0;text-decoration:underline}
+.history-scroll td button:disabled{text-decoration:none;opacity:1;color:var(--muted)}
+.history-selected{background:var(--accent-soft)}
+.shift-positive{color:#17633b;font-weight:600}.shift-negative{color:#984320;font-weight:600}
+.history-pages{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.history-note{font-size:11px;margin:0;line-height:1.3}
+@media(max-width:767px){
+ #app:has(.history-panel[open]) .workspace{grid-template-rows:minmax(100px,1fr) 64px 36px auto minmax(0,1fr)}
+ .history-content{height:45dvh;display:flex;flex-direction:column;overflow:auto;padding:8px}
+ .history-toolbar{align-items:start;gap:8px}.history-toolbar fieldset{width:100%}
+ .history-toolbar fieldset label:last-child{flex:1}.history-toolbar select{max-width:100%}
+ .history-scroll{flex:1 0 160px}.history-note{flex:none}
+}

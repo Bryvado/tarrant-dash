@@ -77,3 +77,9 @@ Results and Compare share a fixed-height primary control group. Precinct search 
 The inspector collapses when no precinct is pinned. A pinned profile provides copy-link and clear controls and places chair records in a collapsed disclosure. On phones, Controls, Precinct, and Charts share a bottom sheet below the map. The Results/Compare switch and contest selector remain visible.
 
 Verification at 1440×800 measured 2.86% county-area coverage from collapsed overlays in the geometry fallback. Browser checks covered responsive layouts, stable control positions, legend/chart/map linkage, all existing URL parameters, clipboard behavior, three computed text sizes, and WCAG AA contrast for muted text. WebGL rendering was checked with a minimal test basemap to isolate the precinct layer.
+
+### Historical results table
+
+Expand **Historical results & shifts** below the workspace. Choose independent From/To years and contests, then Democratic or Republican performance. Sort columns, search precinct/VTD IDs, page through rows or export the filtered table as CSV. Click an available precinct ID to select it on the map. **Use map contest** sets the To selection to the current 2026 map contest and finds the most recent historical election containing the same office. Historical elections use all methods combined, independently of the map's voting-method filter.
+
+Seven general elections (2012–2024) come from the Texas Legislative Council's common 2024 VTD dataset. The 2026 comparison uses the existing ≥98% mutual-area geography crosswalk; unmatched areas have no calculated shifts. Switch off **Comparable only** to inspect coverage gaps. See `docs/SOURCES.md` for definitions, provenance and regeneration.
