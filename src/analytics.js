@@ -38,6 +38,10 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
   const b = field('plot-b'), group = field('plot-group'), caption = field('chart-query');
   const detail = field('plot-detail');
   const comparisonFields = mapControls.querySelector('#comparison-fields');
+  const totalsPanel=document.createElement('div');
+  totalsPanel.className='comparison-totals';
+  totalsPanel.setAttribute('aria-live','polite');
+  comparisonFields.after(totalsPanel);
   const chartControls = a.parentElement.parentElement;
   const aLabel = a.parentElement, raceLabel = race.parentElement, bLabel = b.parentElement;
   const normalControls = ['choice-controls','measure','scope']
@@ -72,7 +76,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
     if (!compare && aLabel.parentElement !== chartControls) chartControls.append(aLabel,raceLabel,bLabel);
     compareButton.setAttribute('aria-pressed',String(compare));
     document.getElementById('results-mode').setAttribute('aria-pressed',String(!compare));
-    comparisonFields.hidden = !compare;
+    comparisonFields.hidden = totalsPanel.hidden = !compare;
     normalControls.forEach(control=>{control.hidden=compare;});
     mapControls.classList.toggle('comparing',compare);
     aLabel.hidden = !compare && !census;
@@ -113,6 +117,22 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
     if (compare) {
       comparison = comparisonMap(view,plotted,
         view.contest.choices[candidate].name,otherRace.choices[other].name,otherRace.name);
+      comparison.colorA=choiceColor(view.contest,candidate);
+      comparison.colorB=choiceColor(otherRace,other);
+      totalsPanel.replaceChildren();
+      for(const [tag,contest,index] of [['A',view.contest,candidate],['B',otherRace,other]]) {
+        const choice=contest.choices[index], total=contest.totals[method], votes=choice.totals[method];
+        const card=document.createElement('div');card.className='comparison-total';
+        card.style.setProperty('--candidate-color',choiceColor(contest,index));
+        const title=document.createElement('strong');title.textContent=tag+' · '+choice.name;
+        const raceName=document.createElement('span');raceName.className='muted';raceName.textContent=contest.name;
+        const value=document.createElement('b');value.textContent=number(votes)+' votes · '+(total?share(votes/total):'—');
+        const denominator=document.createElement('small');denominator.className='muted';denominator.textContent=number(total)+' total race votes';
+        card.append(title,raceName,value,denominator);totalsPanel.append(card);
+      }
+      const note=document.createElement('small');note.className='muted';
+      note.textContent='Full race totals in Tarrant · '+['Mail','Early','Election Day','All methods'][method];
+      totalsPanel.append(note);
       caption.textContent = rows.length
         ? `${count} shared precincts · pooled A − B ${gap(votesA/totalA-votesB/totalB)} · dashed line shows equal shares. Each share uses valid votes in its own contest.`
         : 'No precincts reported valid votes in both races for this voting method.';
@@ -129,11 +149,14 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
   }
 
   function change() {draw();onComparisonChange();}
-  mode.onchange = group.onchange = b.onchange = a.onchange = change;
+  group.onchange = b.onchange = change;
+  a.onchange = () => {updateB();change();};
+  mode.onchange = () => {if(mode.value==='compare')updateB();change();};
   race.onchange = () => {updateB();change();};
   document.getElementById('results-mode').onclick=()=>{mode.value='distribution';change();};
   compareButton.onclick = () => {
     mode.value = mode.value === 'compare' ? 'distribution' : 'compare';
+    if(mode.value==='compare')updateB();
     change();
   };
   return {
@@ -146,7 +169,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
         a.value = String(state.choice);
         previousContest = state.contest;
         previousChoice = state.choice;
-        if (!b.options.length) updateB();
+        updateB();
       }
       if (changed) draw();
       else showDetail();

@@ -1,3 +1,4 @@
+import { classify } from './classification.js';
 import { areaSquareMiles, polygons, rankVotes, isTie, queryMetric, breaksFor, binIndex } from './metrics.js';
 import { rowColor } from './color.js';
 
@@ -31,7 +32,7 @@ export function buildView(geometry, contest, query) {
     const status = !total ? 'zero' : isTie(ranked) ? 'tie' : metric?.value == null ? 'unavailable' : 'data';
     return { ...item, result, total, ranked, metric, status };
   });
-  const breaks = breaksFor(query.measure, rows);
+  const breaks = !query.classification || query.classification==='fixed' ? breaksFor(query.measure, rows) : classify(rows.filter(r=>r.status==='data').map(r=>Math.abs(r.metric.value)),query.classification);
   for (const row of rows) {
     row.color = rowColor(row, contest, query, breaks);
     row.bin = row.status === 'data' ? binIndex(Math.abs(row.metric.value), breaks) : -1;

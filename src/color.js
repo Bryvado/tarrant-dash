@@ -62,10 +62,19 @@ export const PARTY_RAMPS={
 export function displayBin(row, view) {
   return Math.min(4,Math.floor(row.bin*5/(view.breaks.length+1)));
 }
+export const PALETTES = {
+  'purple-green':['#762a83','#1b7837'],
+  'orange-teal':['#b35806','#01665e'],
+};
+export function mapRamp(contest,index,palette='default') {
+  const party=contest.choices[index]?.party;
+  if(PALETTES[palette]) {
+    const side=party==='REP'?0:party==='DEM'?1:(index ?? 1)%2;
+    return Array.from({length:5},(_,i)=>rampColor(PALETTES[palette][side],i,5));
+  }
+  return PARTY_RAMPS[party] || Array.from({length:5},(_,i)=>rampColor(index==null?'#217a68':choiceColor(contest,index),i,5));
+}
 export function rowColor(row, contest, query, breaks) {
   if (row.status !== 'data') return SPECIAL[row.status].color;
-  const base = row.metric.index === null ? '#217a68' : choiceColor(contest, row.metric.index);
-  const palette=PARTY_RAMPS[contest.choices[row.metric.index]?.party];
-  if(palette) return palette[Math.min(4,Math.floor(binIndex(Math.abs(row.metric.value),breaks)*5/(breaks.length+1)))];
-  return rampColor(base, binIndex(Math.abs(row.metric.value), breaks), breaks.length + 1, query.measure === 'share');
+  return mapRamp(contest,row.metric.index,query.palette)[Math.min(4,Math.floor(binIndex(Math.abs(row.metric.value),breaks)*5/(breaks.length+1)))];
 }

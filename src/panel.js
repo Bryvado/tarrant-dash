@@ -118,12 +118,15 @@ export function renderComparisonTooltip(host, comparison, id) {
   const side=difference > 1e-12 ? 'a' : difference < -1e-12 ? 'b' : '';
   const magnitude=Math.abs(difference)*100;
   const gap=side ? `${side.toUpperCase()} +${magnitude < .05 ? '<0.1' : magnitude.toFixed(1)} pp` : 'Equal shares';
-  header.append(el('span',gap,'comparison-tip-gap '+side));
-  for (const [side,name,contest,share,votes,totalVotes] of [
-    ['A',comparison.candidateA,comparison.contestA,shareA,point.countA,point.total],
-    ['B',comparison.candidateB,comparison.contestB,shareB,point.countB,point.totalB],
+  const badge=el('span',gap,'comparison-tip-gap');
+  if(side)badge.style.setProperty('--candidate-color',side==='a'?comparison.colorA:comparison.colorB);
+  header.append(badge);
+  for (const [side,name,contest,share,votes,color] of [
+    ['A',comparison.candidateA,comparison.contestA,shareA,point.countA,comparison.colorA],
+    ['B',comparison.candidateB,comparison.contestB,shareB,point.countB,comparison.colorB],
   ]) {
     const row=el('div','','comparison-tip-row');
+    row.style.setProperty('--candidate-color',color);
     const label=el('div','','comparison-tip-name');
     label.append(el('strong',name),el('span',contest,'muted'));
     if (Number.isFinite(votes)) label.append(el('span',`${number(votes)} votes`,'comparison-tip-votes'));

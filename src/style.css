@@ -111,8 +111,8 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .comparison-tip-header,.comparison-tip-row{display:flex;align-items:center;gap:8px}
 .comparison-tip-header{justify-content:space-between}
 .comparison-tip-gap,.comparison-tip-tag{border-radius:4px;background:#f0eee8;padding:2px 5px;font-weight:600;white-space:nowrap}
-.comparison-tip-gap.a,.comparison-tip-tag.a{color:#14584d;background:#dcefe9}
-.comparison-tip-gap.b,.comparison-tip-tag.b{color:#613481;background:#efe4f5}
+.comparison-tip-gap,.comparison-tip-tag{color:color-mix(in srgb,var(--candidate-color,#506057) 80%,#000);background:color-mix(in srgb,var(--candidate-color,#506057) 15%,white)}
+.comparison-tip-row{border-left:2px solid var(--candidate-color);padding:5px 6px;background:color-mix(in srgb,var(--candidate-color) 6%,white);border-radius:4px}
 .comparison-tip-row{margin-top:7px}
 .comparison-tip-name{flex:1;min-width:0;overflow-wrap:anywhere}
 .comparison-tip-name>span{display:block}
@@ -252,3 +252,7 @@ button,select,input{font-weight:400}
 .state-swatch.unshared{background:var(--void)}
 #whole{display:grid;place-items:center;top:auto}
 #plot .outlier-label{fill:var(--ink);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+
+.comparison-totals{display:grid;gap:10px;margin:12px 0 4px}.comparison-totals[hidden]{display:none}.comparison-total{display:grid;gap:3px;padding:8px 10px;border-left:3px solid var(--candidate-color);background:color-mix(in srgb,var(--candidate-color) 6%,white);border-radius:4px;font-size:12px}.comparison-total b{font-size:14px}.comparison-total span{line-height:1.35}
+
+.controls.comparing .scope-slot{height:auto}

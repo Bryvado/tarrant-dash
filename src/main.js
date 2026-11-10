@@ -186,7 +186,7 @@ async function start() {
     updateProfile(store.get().precinct);
   }).catch(()=>{});
   function render(state,previous,source) {
-    const changed=!view||['contest','choice','method','scope','measure'].some(key=>state[key]!==previous?.[key]);
+    const changed=!view||['contest','choice','method','scope','measure','palette','classification'].some(key=>state[key]!==previous?.[key]);
     if (changed) {
       filterKey=null;
       hover('');

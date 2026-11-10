@@ -1,3 +1,4 @@
+import { SCALES } from './classification.js';
 import { choiceColor } from './color.js';
 
 export const METHODS = ['Mail','Early','Election Day','All methods'];
@@ -138,7 +139,9 @@ export function setupControls(host, store, contests, precincts) {
       </div>${segment('method','Voting method',[[3,'All'],[0,'Mail'],[1,'Early'],[2,'Election Day']])}
       <div id="precinct-picker" class="picker"></div>
       <details class="display-controls"><summary>Map display</summary><div class="control-stack">
-        ${segment('basemap','Basemap',[['streets','Streets'],['aerial','Aerial 2025']])}
+        <label for="palette">Color palette</label><select id="palette"><option value="default">Default</option><option value="purple-green">Purple–green</option><option value="orange-teal">Orange–teal</option></select>
+        <label for="classification">Color scale</label><select id="classification">${Object.entries(SCALES).map(([key,[label]])=>`<option value="${key}">${label}</option>`).join('')}</select><p id="scale-hint" class="hint"></p>
+        ${segment('basemap' ,'Basemap',[['streets','Streets'],['aerial','Aerial 2025']])}
         <label for="shading">Precinct shading <output id="shading-value"></output></label><input id="shading" type="range" min="0" max="100">
         <div id="aerial-settings" hidden><label for="aerial">Aerial opacity <output id="aerial-value"></output></label><input id="aerial" type="range" min="0" max="100">
         </div><label class="check"><input id="outlines" type="checkbox"> Outlines only</label>
@@ -168,6 +171,7 @@ export function setupControls(host, store, contests, precincts) {
     if (key === 'basemap' && !current.shadingAdjusted) patch.shading = value === 'aerial' ? 42 : 85;
     store.set(patch,'controls');
   };
+  for(const key of ['palette','classification']) find(key).onchange=e=>store.set({[key]:e.target.value},'display');
   find('outlines').onchange = e=>store.set({outlines:e.target.checked},'controls');
   find('shading').oninput = e=>store.set({shading:Number(e.target.value),shadingAdjusted:true},'display');
   find('aerial').oninput = e=>store.set({aerial:Number(e.target.value)},'display');
@@ -176,6 +180,8 @@ export function setupControls(host, store, contests, precincts) {
   mobile.addEventListener('change',resize);
   resize();
   return (state, view, aerialAvailable) => {
+    for(const key of ['palette','classification']) find(key).value=state[key];
+    find('scale-hint').textContent=SCALES[state.classification][1];
     showContest(state.contest);
     showPrecinct(state.precinct);
     if (lastContest !== state.contest) {

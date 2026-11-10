@@ -1,4 +1,5 @@
-import { SPECIAL, PARTY_RAMPS, displayBin, choiceColor, rampColor } from './color.js';
+import { SCALES } from './classification.js';
+import { SPECIAL, mapRamp, displayBin } from './color.js';
 import { number } from './metrics.js';
 import { METHODS } from './controls.js';
 
@@ -59,7 +60,7 @@ export function renderLegend(host,view,aerial){
     if(row.status!=='data'){states.set(row.status,(states.get(row.status)||0)+1);continue;}
     const index=row.metric.index,id=view.contest.choices[index]?.party || String(index);
     if(!groups.has(id))groups.set(id,{label:view.contest.choices[index]?.party || view.contest.choices[index]?.name || 'All votes',
-      colors:PARTY_RAMPS[id] || Array.from({length:5},(_,i)=>rampColor(index==null?'#217a68':choiceColor(view.contest,index),i,5)),
+      colors:mapRamp(view.contest,index,view.query.palette),
       counts:[0,0,0,0,0]});
     groups.get(id).counts[displayBin(row,view)]++;
   }
@@ -77,13 +78,13 @@ export function renderLegend(host,view,aerial){
       bins.push({key:id+':'+i,color:group.colors[i],count:group.counts[i],label:group.label+' · '+range+(view.query.measure==='share'?'%':view.query.measure==='margin'?' pp':' votes/mi²')});
     }
   }
-  const ticks=view.query.measure==='share'?['0','50','100%']:view.query.measure==='margin'?['Lower margin','Higher margin']:['Lower density','Higher density'];
-  legend(host,queryTitle(view),bins,states,METHODS[view.query.method]+(aerial?' · Colors over imagery are approximate.':''),ticks);
+  const ticks=view.query.measure==='share'?(view.query.classification && view.query.classification!=='fixed'?['Lower share','Higher share']:['0','50','100%']):view.query.measure==='margin'?['Lower margin','Higher margin']:['Lower density','Higher density'];
+  legend(host,queryTitle(view),bins,states,METHODS[view.query.method]+' · '+SCALES[view.query.classification || 'fixed'][0]+(aerial?' · Colors over imagery are approximate.':''),ticks);
 }
 export function renderComparisonLegend(host,comparison,method,aerial){
   const bins=comparison.bins.map((bin,i)=>({...bin,key:String(i)}));
   legend(host,'Vote share gap',bins,new Map([['unshared',comparison.unavailable]]),
-    'A · '+comparison.candidateA+' / B · '+comparison.candidateB+' · '+METHODS[method],
+    'A · '+comparison.candidateA+' / B · '+comparison.candidateB+' · '+METHODS[method]+' · '+SCALES[comparison.view.query.classification || 'fixed'][0]+(comparison.view.query.classification && comparison.view.query.classification!=='fixed'?' · Classified by absolute gap; equal shares stay neutral.':''),
     ['B higher','Equal','A higher']);
 }
 export function markLegend(host,key){

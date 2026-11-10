@@ -1,4 +1,4 @@
-export const defaults = { contest: 0, choice: 0, method: 3, measure: 'share', scope: 'winner', precinct: '', basemap: 'streets', shading: 85, aerial: 100, outlines: false, shadingAdjusted: false };
+export const defaults = { palette: 'default', classification: 'fixed', contest: 0, choice: 0, method: 3, measure: 'share', scope: 'winner', precinct: '', basemap: 'streets', shading: 85, aerial: 100, outlines: false, shadingAdjusted: false };
 const keys = Object.keys(defaults);
 
 export function createStore(contests, precincts) {
@@ -7,6 +7,8 @@ export function createStore(contests, precincts) {
   function normalize(state) {
     state.contest = validIndex(state.contest, contests.length) ? state.contest : 0;
     const contest = contests[state.contest];
+    if (!['default','purple-green','orange-teal'].includes(state.palette)) state.palette='default';
+    if (!['fixed','equal','quantile','natural'].includes(state.classification)) state.classification='fixed';
     state.choice = validIndex(state.choice, contest.choices.length) ? state.choice : 0;
     state.method = validIndex(state.method, 4) ? state.method : 3;
     if (!['share','margin','density'].includes(state.measure)) state.measure = 'share';
