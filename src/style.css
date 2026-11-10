@@ -332,3 +332,6 @@ button,select,input{font-weight:400}
  #app.history-tab .workspace{grid-template-rows:calc(42dvh - 48px) 64px 36px minmax(0,1fr)}
  #app.history-tab #history{top:calc(42dvh + 100px)}
 }
+/* details creates an anonymous content box; anchor the body to the drawer itself. */
+.history-panel>.history-content{position:absolute;inset:40px 0 0;height:auto}
+@media(max-width:767px){.history-panel>.history-content{inset:36px 0 0}}
