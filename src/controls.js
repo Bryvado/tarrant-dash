@@ -132,7 +132,7 @@ export function setupControls(host, store, contests, precincts) {
     <div id="contest-picker" class="picker"></div>
     <div id="comparison-fields" class="plot-controls" hidden></div>
     <div id="choice-controls" class="picker"></div>
-    ${segment('measure','Measure',[['share','Share'],['margin','Margin'],['density','Density']])}
+    ${segment('measure','Measure',[['share','Share'],['margin','Margin'],['density','Density'],['shift','Shift']])}
     </div><details id="more-controls" class="more-controls" open><summary>Refine</summary><div class="control-stack"><span class="muted refine-label">Refine</span><div class="scope-slot">
       ${segment('scope','Show votes for',[['winner','Precinct leader'],['candidate','Selected candidate'],['total','All votes']])}
       <p class="sr-only" id="scope-hint">All votes is available for density.</p><p class="hint" id="scope-note" role="status" hidden></p>

@@ -1,3 +1,4 @@
+import { contextBounds } from './shift.js';
 import { polygons } from './metrics.js';
 import { boundsFor } from './view.js';
 import { SPECIAL } from './color.js';
@@ -68,6 +69,6 @@ export function createFallback(host, geometry, events) {
   function fit(bounds) {frame=bounds;draw();}
   return {aerialAvailable:false,hover,
     update(nextView,nextState) {const first=!view;view=nextView;state=nextState;if(first) draw();else paint();},
-    fitCounty:()=>fit(county),fitContest:bounds=>fit(bounds||county),fitPrecinct:row=>fit(row.bounds),
+    fitCounty:()=>fit(county),fitContest:bounds=>fit(bounds||county),fitPrecinct:row=>fit(contextBounds(row.bounds)),
   };
 }

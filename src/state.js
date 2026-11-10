@@ -1,4 +1,4 @@
-export const defaults = { palette: 'default', classification: 'fixed', contest: 0, choice: 0, method: 3, measure: 'share', scope: 'winner', precinct: '', basemap: 'streets', shading: 85, aerial: 100, outlines: false, shadingAdjusted: false };
+export const defaults = { hfrom:'2024:United States Senator', hto:'2026:United States Senator', hparty:'DEM', hsort:'abs:desc', hmin:50, hheight:40, hopen:true, hlink:true, hmetric:'share', hbin:'', palette: 'default', classification: 'fixed', contest: 0, choice: 0, method: 3, measure: 'share', scope: 'winner', precinct: '', basemap: 'streets', shading: 85, aerial: 100, outlines: false, shadingAdjusted: false };
 const keys = Object.keys(defaults);
 
 export function createStore(contests, precincts) {
@@ -11,11 +11,17 @@ export function createStore(contests, precincts) {
     if (!['fixed','equal','quantile','natural'].includes(state.classification)) state.classification='fixed';
     state.choice = validIndex(state.choice, contest.choices.length) ? state.choice : 0;
     state.method = validIndex(state.method, 4) ? state.method : 3;
-    if (!['share','margin','density'].includes(state.measure)) state.measure = 'share';
+    if (!['share','margin','density','shift'].includes(state.measure)) state.measure = 'share';
     if (!['winner','candidate','total'].includes(state.scope) || (state.scope === 'total' && state.measure !== 'density')) state.scope = 'winner';
-    if (!precincts.has(state.precinct) || !Object.hasOwn(contest.precincts, state.precinct)) state.precinct = '';
+    if (!precincts.has(state.precinct) || (state.measure!=='shift' && !Object.hasOwn(contest.precincts, state.precinct))) state.precinct = '';
     if (state.basemap !== 'aerial') state.basemap = 'streets';
     for (const key of ['shading','aerial']) if (!(state[key] >= 0 && state[key] <= 100)) state[key] = defaults[key];
+    state.hmin=Math.max(0,Math.min(100000,Number(state.hmin)||0));
+    state.hheight=Math.max(160/innerHeight*100,Math.min(75,Number(state.hheight)||40));
+    if(!['DEM','REP'].includes(state.hparty))state.hparty='DEM';
+    if(!['share','margin'].includes(state.hmetric))state.hmetric='share';
+    if(!/^([0-8]|zero|low)?$/.test(state.hbin))state.hbin='';
+    if(!/^(abs|key|as|bs|shift|av|bv|voteChange):(asc|desc)$/.test(state.hsort))state.hsort='abs:desc';
     return state;
   }
   function fromHash() {

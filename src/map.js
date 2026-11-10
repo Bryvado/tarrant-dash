@@ -1,3 +1,4 @@
+import { contextBounds } from './shift.js';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import countyMask from './county-mask.json';
@@ -217,6 +218,6 @@ export function createMap(host, geometry, events) {
     hover,
     fitCounty:()=>fit(countyBounds),
     fitContest:bounds=>fit(bounds||countyBounds,true,13),
-    fitPrecinct:row=>fit(row.bounds,true,17),
+    fitPrecinct:row=>fit(contextBounds(row.bounds),true,13),
   };
 }

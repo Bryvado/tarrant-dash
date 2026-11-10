@@ -12,3 +12,4 @@
   --radius:8px; --radius-small:4px;
   --small:12px; --body:14px; --title:20px;
 }
+:root{--gain-1:#d4e8e4;--gain-2:#8cc4ba;--gain-3:#3f948a;--gain-4:#1d6259;--loss-1:#f0e2c8;--loss-2:#dcbd82;--loss-3:#b98a3c;--loss-4:#7d5a1e}

@@ -33,7 +33,7 @@ app.innerHTML=`
       <details id="map-legend" class="map-legend"></details>
       <p id="fallback-note" class="fallback-note" hidden></p>
     </section>
-    <div class="sheet-tabs" role="tablist" aria-label="Workspace panels"><button id="controls-tab" role="tab" aria-controls="controls" aria-selected="true">Controls</button><button id="precinct-tab" role="tab" aria-controls="profile" aria-selected="false">Precinct</button><button id="analytics-tab" role="tab" aria-controls="analytics" aria-selected="false">Charts</button></div>
+    <div class="sheet-tabs" role="tablist" aria-label="Workspace panels"><button id="controls-tab" role="tab" aria-controls="controls" aria-selected="true">Controls</button><button id="precinct-tab" role="tab" aria-controls="profile" aria-selected="false">Precinct</button><button id="analytics-tab" role="tab" aria-controls="analytics" aria-selected="false">Charts</button><button id="history-tab" role="tab" aria-controls="history" aria-selected="false">Historical</button></div>
     <div id="sheet-header"></div>
     <aside id="controls" class="controls" aria-label="Map controls"></aside>
     <aside id="analytics" class="analytics" aria-label="Analytics">
@@ -66,7 +66,7 @@ async function start() {
   const store=createStore(data.contests,precincts);
   let view, renderer, demographics, chairs, lastLegendView, lastLegendAerial, filterKey=null, hovered='', drawer=false;
   $('status-text').textContent=`Nov. 3, 2026 · ${number(geometry.length)} precincts · ${data.checks}/${data.checks} checks passed`;
-  const historyTable=setupHistory($('history'),data,precinct=>pin(precinct,true));
+  const historyTable=setupHistory($('history'),data,store,{pin:precinct=>{if(!data.contests[store.get().contest].precincts[precinct])store.set({measure:'shift'});pin(precinct,true);},hover:(id)=>hover(id),change:()=>{if(!renderer||!view)return;lastLegendView=null;renderMap(store.get());updateProfile(store.get().precinct);}});
   const syncControls=setupControls($('controls'),store,data.contests,precincts);
   $('precinct-picker').classList.add('map-search');
   $('map').parentElement.append($('precinct-picker'));
@@ -88,14 +88,18 @@ async function start() {
   function pin(precinct,fly=false) {store.set({precinct},fly?'precinct':'pin');}
   function hover(precinct,event) {
     const row=view?.byId.get(precinct);
-    if (!row?.result) precinct='';
+    if (!row?.result && store.get().measure!=='shift') precinct='';
     if (precinct!==hovered) {
       hovered=precinct;
       renderer?.hover(precinct);
       chart.hover(precinct);
-      const comparison=analytics.comparison();
+      historyTable.hover(precinct);
+      const comparison=store.get().measure==='shift'?null:analytics.comparison();
       markLegend(legend,precinct?(comparison ? comparison.keys.get(precinct) : legendKey(view,row)):null);
-      if (precinct && comparison) {
+      if (precinct && store.get().measure==='shift') {
+        historyTable.tooltip(tooltip,precinct);
+        markLegend(legend,historyTable.key(precinct));
+      } else if (precinct && comparison) {
         renderComparisonTooltip(tooltip,comparison,precinct);
       } else if (precinct) {
         renderTooltip(tooltip,view,row);
@@ -134,6 +138,7 @@ async function start() {
   function updateProfile(id) {
     const description=analytics.comparison() && (analytics.describe(id) || 'No comparable vote share');
     renderPrecinct($('profile'),view,id,chairs,demographics,description);
+    historyTable.profile($('profile'),id);
     $('analytics').classList.toggle('has-pin',!!id);
     const clear=$('clear-precinct'),copy=$('copy-precinct');
     if(clear) clear.onclick=()=>pin('');
@@ -143,6 +148,7 @@ async function start() {
     };
   }
   function setLegendFilter(key) {
+    if(store.get().measure==='shift'){historyTable.filter(store.get().hbin===key?'':key);return;}
     filterKey=filterKey===key ? null : key;
     renderMap(store.get());
   }
@@ -153,20 +159,22 @@ async function start() {
     setLegendFilter(button.dataset.filterKey);
   });
   function renderMap(state) {
-    const comparison=analytics.comparison();
-    const mapView=comparison?.view ?? view;
+    const shift=state.measure==='shift';
+    const comparison=shift?null:analytics.comparison();
+    const mapView=shift?historyTable.mapView(view):comparison?.view ?? view;
     const aerial=state.basemap==='aerial' && renderer.aerialAvailable;
     if (mapView!==lastLegendView || aerial!==lastLegendAerial) {
-      if (comparison) renderComparisonLegend(legend,comparison,state.method,aerial);
+      if (shift) historyTable.legend(legend);
+      else if (comparison) renderComparisonLegend(legend,comparison,state.method,aerial);
       else renderLegend(legend,view,aerial);
       lastLegendView=mapView;
       lastLegendAerial=aerial;
     }
-    const matches=filterKey==null ? null : new Set(mapView.rows.filter(row=>
+    const matches=shift||filterKey==null ? null : new Set(mapView.rows.filter(row=>
       (comparison ? comparison.keys.get(row.precinct) : legendKey(view,row))===filterKey
     ).map(row=>row.precinct));
     for(const button of legend.querySelectorAll('[data-filter-key]')){
-      const active=button.dataset.filterKey===filterKey;
+      const active=button.dataset.filterKey===(shift?state.hbin:filterKey);
       button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
     }
     chart.filter(matches,mapView.byId);
@@ -192,9 +200,11 @@ async function start() {
     if (changed) {
       filterKey=null;
       hover('');
-      view=buildView(geometry,data.contests[state.contest],state);
+      view=buildView(geometry,data.contests[state.contest],state.measure==='shift'?{...state,measure:'share'}:state);
       renderSummary($('totals'),view);
     }
+    if(state.measure==='shift'&&previous?.measure!=='shift'&&!state.hopen){store.set({hopen:true});return;}
+    if(state.measure==='shift'&&previous?.measure!=='shift'&&mobileLayout.matches){app.classList.add('history-tab');$('history-tab').setAttribute('aria-selected','true');}
     syncControls(state,view,renderer.aerialAvailable);
     historyTable.update(state);
     analytics.update(view,state);
@@ -205,7 +215,7 @@ async function start() {
       if(state.precinct===hovered)tooltip.hidden=true;
       const pinned=view.byId.get(state.precinct);
       const comparison=analytics.comparison();
-      if(pinned)markLegend(legend,comparison ? comparison.keys.get(state.precinct) : legendKey(view,pinned));
+      if(pinned)markLegend(legend,state.measure==='shift'?historyTable.key(state.precinct):comparison ? comparison.keys.get(state.precinct) : legendKey(view,pinned));
     }
     if ((!previous || source==='hash' || source==='precinct') && state.precinct) renderer.fitPrecinct(view.byId.get(state.precinct));
     else if (!previous || state.contest!==previous.contest) {
@@ -231,7 +241,7 @@ async function start() {
       drawer=analytics;app.classList.toggle('drawer-open',drawer);
       $('drawer-toggle').setAttribute('aria-expanded',String(drawer));
     }
-    app.classList.remove('precinct-tab');
+    app.classList.remove('precinct-tab','history-tab');$('history-tab').setAttribute('aria-selected','false');
     $('precinct-tab').setAttribute('aria-selected','false');
     app.classList.toggle('analytics-tab',analytics);
     $('controls-tab').setAttribute('aria-selected',String(!analytics));
@@ -253,11 +263,12 @@ async function start() {
   };
   $('controls-tab').onclick=()=>showTab(false);
   $('analytics-tab').onclick=()=>showTab(true);
-  const tabs=[$('controls-tab'),$('precinct-tab'),$('analytics-tab')];
+  $('history-tab').onclick=()=>{showTab(false);app.classList.add('history-tab');$('controls-tab').setAttribute('aria-selected','false');$('history-tab').setAttribute('aria-selected','true');store.set({hopen:true});};
+  const tabs=[$('controls-tab'),$('precinct-tab'),$('analytics-tab'),$('history-tab')];
   for(const [index,tab] of tabs.entries())tab.onkeydown=event=>{
     if(!['ArrowLeft','ArrowRight'].includes(event.key))return;
     event.preventDefault();
-    const next=tabs[(index+(event.key==='ArrowRight'?1:2))%3];
+    const next=tabs[(index+(event.key==='ArrowRight'?1:3))%4];
     next.click();next.focus();
   };
   document.addEventListener('click',event=>{

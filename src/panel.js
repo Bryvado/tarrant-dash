@@ -63,6 +63,7 @@ export function renderPrecinct(host, view, id, chairs, demographics, comparison)
     actions.append(button);
   }
   host.firstChild.append(actions);
+  if (!row.result) {host.append(el('p','Outside the current map contest.','muted'));return;}
   if (comparison) host.append(el('p',comparison));
   for (const entry of row.ranked) if (entry.count) host.append(bar(view,entry,row.total,entry===row.ranked[0] && row.status!=='tie'));
   const split=el('div','','method-split');

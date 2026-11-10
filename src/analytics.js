@@ -44,7 +44,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
   mapControls.querySelector('.scope-slot').prepend(totalsPanel);
   const chartControls = a.parentElement.parentElement;
   const aLabel = a.parentElement, raceLabel = race.parentElement, bLabel = b.parentElement;
-  const normalControls = ['choice-controls','measure','scope']
+  const normalControls = ['choice-controls','scope']
     .map(id=>mapControls.querySelector('#'+id));
   let view, state, demographics, previousContest, previousChoice, comparison, plotted = new Map();
   addOptions(race, contests, contest => contest.name);
@@ -171,6 +171,7 @@ export function setupAnalytics(host, chart, contests, mapControls, compareButton
         previousChoice = state.choice;
         updateB();
       }
+      if(state.measure==='shift'&&mode.value==='compare')mode.value='distribution';
       if (changed) draw();
       else showDetail();
     },
